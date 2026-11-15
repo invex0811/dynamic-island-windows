@@ -14,6 +14,26 @@ public partial class MainWindow
 
     private byte[]? _liquidPixels;
 
+    // The lens is worked out for the island's resting shape. While the island reaches for the cursor its
+    // outline swells away from that shape, and the bent band would stay behind as an edge across the
+    // swollen part. So the lens relaxes as the island reaches (1 = full bend, 0 = flat glass) and comes
+    // back when it settles; the picture is small, so redoing it for a frame costs next to nothing.
+    private (int W, int H, double X0, double Iw, double Ih, double Rr) _lens;
+    private double _lensShown = 1;
+    private double LensNow => 1 - Math.Clamp(_reach.Value, 0, 1);
+
+    /// <summary>Every frame while the island moves: bend the backdrop as much as the reach allows right now.</summary>
+    private void RelaxLens()
+    {
+        if (!LiquidGlass || _frostBmp == null || _frostPixels == null || _lens.W == 0) return;
+        double lens = LensNow;
+        if (Math.Abs(lens - _lensShown) < 0.02) return;
+        if (_frostPixels.Length != _lens.W * _lens.H * 4 || _frostBmp.PixelWidth != _lens.W || _frostBmp.PixelHeight != _lens.H) return;
+        _lensShown = lens;
+        var shown = Refract(_frostPixels, _lens.W, _lens.H, _lens.X0, _lens.Iw, _lens.Ih, _lens.Rr, lens);
+        _frostBmp.WritePixels(new System.Windows.Int32Rect(0, 0, _lens.W, _lens.H), shown, _lens.W * 4, 0);
+    }
+
     /// <summary>Lighter blur than plain frost: matte, yet you can tell what's behind and see it bend.</summary>
     private void ApplyLiquidBlur()
     {
@@ -24,7 +44,7 @@ public partial class MainWindow
     /// The grab (BGRX, w×h) covers the island plus a margin around it; the island is the rounded rectangle
     /// at (x0, 0) of size iw×ih with corner radius rr (all in grab pixels). Returns the bent picture.
     /// </summary>
-    private byte[] Refract(byte[] src, int w, int h, double x0, double iw, double ih, double rr)
+    private byte[] Refract(byte[] src, int w, int h, double x0, double iw, double ih, double rr, double lens = 1)
     {
         if (_liquidPixels == null || _liquidPixels.Length != src.Length) _liquidPixels = new byte[src.Length];
         var dst = _liquidPixels;
@@ -60,12 +80,12 @@ public partial class MainWindow
                     // as if it curls over the rounded rim; red bends a bit more than blue — a thin rainbow fringe.
                     // (it reads from inside the glass, so it never runs off the grabbed picture)
                     double f = (1 - t) * (1 - t);
-                    double off = f * push;
+                    double off = f * push * lens;
                     dst[i + 2] = Sample(src, w, h, px - nx * off * 1.12, py - ny * off * 1.12, 2);
                     dst[i + 1] = Sample(src, w, h, px - nx * off, py - ny * off, 1);
                     dst[i + 0] = Sample(src, w, h, px - nx * off * 0.88, py - ny * off * 0.88, 0);
                     // light gathers in the rim
-                    int glow = (int)(f * 18);
+                    int glow = (int)(f * 18 * lens);
                     dst[i] = (byte)Math.Min(255, dst[i] + glow);
                     dst[i + 1] = (byte)Math.Min(255, dst[i + 1] + glow);
                     dst[i + 2] = (byte)Math.Min(255, dst[i + 2] + glow);

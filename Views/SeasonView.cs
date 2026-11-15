@@ -480,6 +480,24 @@ public sealed class SeasonView : FrameworkElement
     // the palette the blobs wander through: pink, magenta, violet, blue, cyan (no greens or browns: blends stay clean)
     private static readonly double[] LiquidHues = [335, 300, 265, 225, 192];
 
+    private Geometry? _outline;
+
+    /// <summary>
+    /// The island's outline as it is right now (it swells when the island reaches for the cursor). The liquid
+    /// glass draws its rim light along it; drawn along the resting shape, the rim stayed behind as a bright
+    /// pill inside the swollen body.
+    /// </summary>
+    public Geometry? Outline
+    {
+        get => _outline;
+        set
+        {
+            if (ReferenceEquals(_outline, value)) return;
+            _outline = value;
+            if (_kind == "liquid") InvalidateVisual();
+        }
+    }
+
     private void DrawLiquid(DrawingContext dc, double w, double h)
     {
         // the glass itself (the bending and the colour fringe) is done on the backdrop picture, see MainWindow.LiquidGlass;
@@ -496,9 +514,14 @@ public sealed class SeasonView : FrameworkElement
                 new GradientStop(Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF), 1),
             },
         };
-        dc.DrawRoundedRectangle(null, new Pen(top, 1.2), new Rect(0.8, 0.8, w - 1.6, h - 1.6), radius - 0.8, radius - 0.8);
+        // along the live outline; the scene is clipped to that outline, so only the inner half of the line shows
+        if (_outline != null) dc.DrawGeometry(null, new Pen(top, 2.6), _outline);
+        else dc.DrawRoundedRectangle(null, new Pen(top, 1.2), new Rect(0.8, 0.8, w - 1.6, h - 1.6), radius - 0.8, radius - 0.8);
         // a soft sheen on the upper part of the glass
-        var sheen = new LinearGradientBrush(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF), Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 90);
-        dc.DrawRoundedRectangle(sheen, null, new Rect(0, 0, w, Math.Min(h, Compact ? h : 60)), radius, radius);
+        // (painted wider than the box and cut by the outline, so it covers the swollen part too)
+        double sheenH = Math.Min(h, Compact ? h : 60);
+        var sheen = new LinearGradientBrush(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF), Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 90)
+        { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, 0), EndPoint = new Point(0, sheenH) };
+        dc.DrawRectangle(sheen, null, new Rect(-Bleed, 0, w + 2 * Bleed, sheenH));
     }
 }

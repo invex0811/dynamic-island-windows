@@ -204,7 +204,9 @@ public partial class MainWindow
             if (LiquidGlass)
             {
                 double sb = w / (half * 2);   // DIP → grab pixels
-                shown = Refract(px, w, h, (half - islandW / 2) * sb, islandW * sb, islandH * sb, Math.Min(islandH / 2, 28) * sb);
+                _lens = (w, h, (half - islandW / 2) * sb, islandW * sb, islandH * sb, Math.Min(islandH / 2, 28) * sb);
+                _lensShown = LensNow;
+                shown = Refract(px, w, h, _lens.X0, _lens.Iw, _lens.Ih, _lens.Rr, _lensShown);
             }
             _frostBmp!.WritePixels(new Int32Rect(0, 0, w, h), shown, w * 4, 0);
             _frostHalf = half;
@@ -244,6 +246,7 @@ public partial class MainWindow
         AuraFill.Height = Island.Height + 12;
         AuraLine.Data = g;
         AuraLine.Clip = g;   // only the inner half of the edge line shows: it's part of the island
+        Season.Outline = g;  // the liquid glass's rim light runs along the outline
     }
 
     // ================================================================ aura

@@ -326,6 +326,7 @@ public partial class MainWindow
         // show as a bright blob, so it dims while the island reaches
         double dim = 1 - Math.Clamp(_reach.Value, 0, 1) * 0.9;
         if (Math.Abs(AuraDim.Opacity - dim) > 0.01) AuraDim.Opacity = dim;
+        RelaxLens();   // liquid glass: the lens at the rim relaxes while the island reaches
         IslandShift.X = _lean.Value;
         bool shapeMoving = Liquid && (_ripple > 0 || playing || _audioLevel > 0);
         bool reactive = _settings.Reactive && !Lite && _mode == Mode.Compact &&
