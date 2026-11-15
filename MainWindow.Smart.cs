@@ -19,12 +19,26 @@ public partial class MainWindow
     // ------------------------------------------------------------------ open on the right tab
 
     private DateTime _closedAt = DateTime.MinValue, _copiedAt = DateTime.MinValue;
+    private DateTime _foldedAt = DateTime.Now;   // when the open island last folded (SetMode)
 
     /// <summary>The user opens the folded island (hover or click): pick the tab, then open.</summary>
     private void OpenSmart()
     {
-        if (Smart && SmartTab() is { } tab && tab.IsChecked != true) tab.IsChecked = true;
+        if (!BackToHome() && Smart && SmartTab() is { } tab && tab.IsChecked != true) tab.IsChecked = true;
         Expand();
+    }
+
+    /// <summary>
+    /// Settings › Behavior, "open the main tab after a break": the island wasn't open for a while, so it starts
+    /// from its first tab instead of the one it was left on (coming back sooner, you get that tab as before).
+    /// It goes before the smart island's choice: asked for, it is the main tab every time.
+    /// </summary>
+    private bool BackToHome()
+    {
+        if (!_settings.HomeAfterBreak || _liveDemo) return false;
+        if ((DateTime.Now - _foldedAt).TotalSeconds < Math.Clamp(_settings.HomeAfterSeconds, 5, 3600)) return false;
+        if (TabHome.IsChecked != true) TabHome.IsChecked = true;
+        return true;
     }
 
     /// <summary>Which tab fits this moment best, or null to keep the current one.</summary>

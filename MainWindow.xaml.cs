@@ -703,6 +703,7 @@ public partial class MainWindow : Window
         if (_hidden) ShowIsland();
         _pinnedOpen = true;   // stays open until the shortcut, Esc or a click elsewhere
         GrowWindow();
+        BackToHome();
         Expand();
         Activate();
     }
@@ -1039,6 +1040,7 @@ public partial class MainWindow : Window
     {
         var old = _mode;
         _mode = mode;
+        if (old == Mode.Expanded && mode != Mode.Expanded) _foldedAt = DateTime.Now;   // the break before "back to the main tab" starts here
 
         var views = new Dictionary<Mode, FrameworkElement>
         {

@@ -198,6 +198,10 @@ public partial class MainWindow
         GameStatsOptions.Visibility = _settings.GameStats ? Visibility.Visible : Visibility.Collapsed;
         LockSwitch.IsChecked = _settings.LockPosition;
         SmartSwitch.IsChecked = _settings.SmartIsland;
+        HomeBreakSwitch.IsChecked = _settings.HomeAfterBreak;
+        HomeBreakSlider.Value = HomeBreakStep(_settings.HomeAfterSeconds);
+        HomeBreakValue.Text = HomeBreakLabel(HomeBreaks[HomeBreakStep(_settings.HomeAfterSeconds)]);
+        HomeBreakRow.Visibility = _settings.HomeAfterBreak ? Visibility.Visible : Visibility.Collapsed;
         FillHideAppPicker();
         CapsSwitch.IsChecked = _settings.ShowCapsLock;
         LayoutSwitch.IsChecked = _settings.ShowKeyboardLayout;
@@ -328,6 +332,8 @@ public partial class MainWindow
         if (fpsWas != _settings.GameShowFps && _gameMode) OnGameModeChanged(true);   // start or stop counting frames right away
         _settings.LockPosition = LockSwitch.IsChecked == true;
         _settings.SmartIsland = SmartSwitch.IsChecked == true;
+        _settings.HomeAfterBreak = HomeBreakSwitch.IsChecked == true;
+        HomeBreakRow.Visibility = _settings.HomeAfterBreak ? Visibility.Visible : Visibility.Collapsed;
         _settings.ShowCapsLock = CapsSwitch.IsChecked == true;
         _settings.ShowKeyboardLayout = LayoutSwitch.IsChecked == true;
         _settings.ShowDiscordCall = DiscordSwitch.IsChecked == true;
@@ -392,6 +398,23 @@ public partial class MainWindow
         LiquidValue.Text = $"{_settings.LiquidStrength}%";
         _settings.Save();
         Kick(4);   // a wave to show the new strength
+    }
+
+    // "open the main tab after a break": the breaks the slider offers, in seconds
+    private static readonly int[] HomeBreaks = [15, 30, 60, 120, 180, 300, 600, 900, 1800];
+
+    /// <summary>The slider's step nearest to a saved number of seconds.</summary>
+    private static int HomeBreakStep(int seconds) =>
+        Array.IndexOf(HomeBreaks, HomeBreaks.MinBy(b => Math.Abs(b - seconds)));
+
+    private static string HomeBreakLabel(int seconds) => seconds < 60 ? L.F("{0} с", seconds) : L.F("{0} мин", seconds / 60);
+
+    private void HomeBreak_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_settingsLoading || !IsLoaded) return;
+        _settings.HomeAfterSeconds = HomeBreaks[Math.Clamp((int)Math.Round(HomeBreakSlider.Value), 0, HomeBreaks.Length - 1)];
+        HomeBreakValue.Text = HomeBreakLabel(_settings.HomeAfterSeconds);
+        _settings.Save();
     }
 
     private void ToastSeconds_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

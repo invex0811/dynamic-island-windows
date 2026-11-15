@@ -57,6 +57,10 @@ public sealed class Settings
     public bool DiscordSidePill { get; set; } = true;
     /// <summary>The smart island: opens on what matters now, learns your habits, keeps quiet while you type.</summary>
     public bool SmartIsland { get; set; } = true;
+    /// <summary>After a break the island opens on its first (main) tab, not on the tab it was left on.</summary>
+    public bool HomeAfterBreak { get; set; } = true;
+    /// <summary>How long that break is, in seconds.</summary>
+    public int HomeAfterSeconds { get; set; } = 60;
     /// <summary>How often each tab was used, per hour of the day (24 counts per tab). Stays on this PC.</summary>
     public Dictionary<string, int[]> TabHabits { get; set; } = [];
     /// <summary>Keep the island out of screenshots, recordings and screen sharing (Zoom, Discord, OBS).</summary>

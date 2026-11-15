@@ -1132,6 +1132,16 @@
                                Text="Открывается на том, что важно сейчас (таймер, звонок, скопированное, музыка) или на вкладке, которую вы обычно открываете в это время. Пока вы печатаете, не раскрывается от курсора, а сообщения ждут паузы. При низком заряде ноутбука включает облегчённую графику. Привычки хранятся только на этом ПК."/>
                     <Button Style="{StaticResource GhostPill}" HorizontalAlignment="Left" Padding="12,6" Margin="0,0,0,6"
                             Content="Забыть привычки" Click="ResetHabits_Click"/>
+                    <CheckBox x:Name="HomeBreakSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="После перерыва открывать главную вкладку"/>
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,6"
+                               Text="Если не открывать остров дольше этого времени, он откроется на первой вкладке, а не на той, где вы остановились. Действует и при включённом «Умном острове»."/>
+                    <DockPanel x:Name="HomeBreakRow" Margin="0,0,0,8">
+                      <TextBlock DockPanel.Dock="Left" Text="Длительность перерыва" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="12.5"/>
+                      <TextBlock x:Name="HomeBreakValue" DockPanel.Dock="Right" Style="{StaticResource Muted}" VerticalAlignment="Center" MinWidth="48"
+                                 TextAlignment="Right" Margin="10,0,0,0"/>
+                      <Slider x:Name="HomeBreakSlider" Style="{StaticResource SoftSlider}" Minimum="0" Maximum="8" TickFrequency="1"
+                              IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="HomeBreak_ValueChanged"/>
+                    </DockPanel>
                     <CheckBox x:Name="LockSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Закрепить на месте (не перетаскивать)"/>
                     <Button Style="{StaticResource AccentPill}" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="14,7"
                             Click="ResetPosition_Click" ToolTip="Поставить остров ровно по центру вверху экрана">
