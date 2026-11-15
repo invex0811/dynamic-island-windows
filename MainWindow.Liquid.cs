@@ -385,34 +385,23 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// The whole outline flows towards the cursor like a wave: every point of the edge moves
-    /// towards it, the nearer and the more it faces the cursor, the more. The top edge stays put.
+    /// The island reaches for the cursor like a drop about to fall: the stretch of the outline nearest to the
+    /// cursor swells into a rounded lobe that points at it, with soft shoulders running into the body. The
+    /// rest of the outline stays where it is, and so does the top edge.
+    /// (Before, every point of the side facing the cursor moved by the same vector, which sheared the whole
+    /// end of the pill and left a sharp corner.)
     /// </summary>
     private static Geometry FlowGeometry(double w, double h, double r, bool docked, Point cursor, double strength)
     {
-        var pts = new List<Point>(220);
-        // one smooth field: the whole body leans towards the cursor, the side facing it swells most
-        var centre = new Point(w / 2, h / 2);
-        double gx = cursor.X - centre.X, gy = cursor.Y - centre.Y;
-        double glen = Math.Max(1, Math.Sqrt(gx * gx + gy * gy));
-        gx /= glen; gy /= glen;
-        double reach = 18 * strength, spread = 60 + w * 0.45;
+        var pts = new List<Point>(280);
+        var normals = new List<Vector>(280);
+        var pinned = new List<bool>(280);   // points that keep their place whatever happens (the docked "ears")
 
-        void Add(double x, double y, double nx, double ny)
-        {
-            double dx = cursor.X - x, dy = cursor.Y - y;
-            double dist = Math.Sqrt(dx * dx + dy * dy);
-            double facing = Math.Max(0, nx * gx + ny * gy);
-            facing = facing * facing * (3 - 2 * facing);                  // smoothstep: no hard edges
-            double hold = Math.Pow(Math.Clamp(y / h, 0, 1), 0.8);        // anchored at the top
-            double near = 1 / (1 + (dist / spread) * (dist / spread));    // gentle bell, no cusp
-            double amount = reach * (0.12 + 0.88 * facing) * near * hold;
-            pts.Add(new Point(x + gx * amount, y + gy * amount));
-        }
-
+        void Add(double x, double y, double nx, double ny) { pts.Add(new Point(x, y)); normals.Add(new Vector(nx, ny)); pinned.Add(false); }
+        void Pin(double x, double y) { pts.Add(new Point(x, y)); normals.Add(default); pinned.Add(true); }
         void Arc(double cx, double cy, double fromDeg, double toDeg)
         {
-            int n = Math.Max(5, (int)(r * Math.PI / 2 / 3));
+            int n = Math.Max(6, (int)(r * Math.PI / 2 / 2.5));
             for (int i = 1; i <= n; i++)
             {
                 double a = (fromDeg + (toDeg - fromDeg) * i / n) * Math.PI / 180;
@@ -421,16 +410,17 @@ public partial class MainWindow
             }
         }
 
-        const double step = 4, ear = 9;
+        // the resting outline, as a ring of points a few pixels apart, each with its outward direction
+        const double step = 3, ear = 9;
         if (docked)
         {
-            pts.Add(new Point(-ear, 0));
-            for (int i = 1; i <= 6; i++) { double t = i / 6.0; pts.Add(new Point(-ear + ear * (1 - (1 - t) * (1 - t)), ear * t * t)); }
+            Pin(-ear, 0);
+            for (int i = 1; i <= 6; i++) { double t = i / 6.0; Pin(-ear + ear * (1 - (1 - t) * (1 - t)), ear * t * t); }
             for (double y = ear + step; y < h - r; y += step) Add(0, y, -1, 0);
         }
         else
         {
-            pts.Add(new Point(r, 0));
+            Add(r, 0, 0, -1);
             Arc(r, r, 270, 180);
             for (double y = r + step; y < h - r; y += step) Add(0, y, -1, 0);
         }
@@ -440,7 +430,7 @@ public partial class MainWindow
         if (docked)
         {
             for (double y = h - r - step; y > ear; y -= step) Add(w, y, 1, 0);
-            for (int i = 0; i <= 6; i++) { double t = i / 6.0; pts.Add(new Point(w + ear * t * t, ear * (1 - t) * (1 - t) * 1 + 0)); }
+            for (int i = 0; i <= 6; i++) { double t = i / 6.0; Pin(w + ear * t * t, ear * (1 - t) * (1 - t)); }
         }
         else
         {
@@ -449,11 +439,80 @@ public partial class MainWindow
             for (double x = w - r - step; x > r; x -= step) Add(x, 0, 0, -1);
         }
 
+        int count = pts.Count;
+        if (strength > 0.004)
+        {
+            // how far along the outline each point is, and which point is nearest to the cursor
+            var along = new double[count];
+            int nearest = -1;
+            double best = double.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                if (i > 0) along[i] = along[i - 1] + (pts[i] - pts[i - 1]).Length;
+                if (pinned[i]) continue;
+                double d = (cursor - pts[i]).LengthSquared;
+                if (d < best) { best = d; nearest = i; }
+            }
+            double total = along[count - 1] + (pts[0] - pts[count - 1]).Length;
+
+            if (nearest >= 0)
+            {
+                // the whole lobe moves one way: from the nearest point of the outline towards the cursor
+                var aim = cursor - pts[nearest];
+                double room = aim.Length;
+                if (room > 0.5) aim /= room; else aim = normals[nearest];
+
+                double tip = Math.Min(17 * strength, room * 0.8);   // how far the tip goes: never past the cursor
+                double width = 16 + 10 * strength;                  // half-width of the lobe along the outline
+                double shoulders = width * 2.2;                     // the low swell it grows out of
+                double anchor = along[nearest];
+                for (int i = 0; i < count; i++)
+                {
+                    if (pinned[i]) continue;
+                    double ds = Math.Abs(along[i] - anchor);
+                    ds = Math.Min(ds, total - ds);     // the outline is a ring
+                    // a bell: round at the tip, running smoothly into the body on both sides
+                    double lobe = Math.Exp(-(ds * ds) / (width * width));
+                    double swell = Math.Exp(-(ds * ds) / (shoulders * shoulders));
+                    double amount = tip * (0.84 * lobe + 0.16 * swell);
+                    if (amount < 0.02) continue;
+
+                    var p = pts[i];
+                    // it hangs from the top: the top edge never moves up or down, everything below the upper third does
+                    double hold = Math.Clamp(p.Y / (h * 0.3), 0, 1);
+                    hold = hold * hold * (3 - 2 * hold);
+
+                    // a touch of "straight out" keeps the flanks from folding where the outline turns a corner
+                    var dir = aim * 0.85 + normals[i] * 0.15;
+                    if (dir.LengthSquared < 0.0001) continue;
+                    dir.Normalize();
+                    var move = dir * amount;
+                    // sideways the floating pill may stretch at any height (its end grows a round nose, the top
+                    // edge just gets longer); the docked one is held whole, its ears are fixed to the screen edge
+                    if (docked) move *= hold; else move.Y *= hold;
+                    pts[i] = p + move;
+                }
+            }
+        }
+
         var g = new StreamGeometry();
         using (var c = g.Open())
         {
-            c.BeginFigure(pts[0], true, true);
-            c.PolyLineTo(pts.Skip(1).ToList(), true, true);
+            if (docked)
+            {
+                // the ears must meet the screen edge exactly: straight segments
+                c.BeginFigure(pts[0], true, true);
+                c.PolyLineTo(pts.Skip(1).ToList(), true, true);
+            }
+            else
+            {
+                // a smooth closed curve through the ring: each point is a control point, the curve passes
+                // through the midpoints between neighbours (straight where the points are in line)
+                static Point Mid(Point a, Point b) => new((a.X + b.X) / 2, (a.Y + b.Y) / 2);
+                c.BeginFigure(Mid(pts[count - 1], pts[0]), true, true);
+                for (int i = 0; i < count; i++)
+                    c.QuadraticBezierTo(pts[i], Mid(pts[i], pts[(i + 1) % count]), true, true);
+            }
         }
         return g;
     }
