@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,7 +8,7 @@ namespace DynamicIsland;
 
 /// <summary>
 /// The Notifications tab: every message the island has shown and you haven't got to yet. A message leaves
-/// the list when you click it (its program comes forward), switch to that program yourself, press its
+/// the list when you click it (its program opens), switch to that program yourself, press its
 /// "remove" button or clear the list. Kept in memory only, like the clipboard history.
 /// </summary>
 public partial class MainWindow
@@ -40,35 +39,23 @@ public partial class MainWindow
         if (InboxPageOpen) RenderInbox();
     }
 
-    /// <summary>The first word of a program's name: how its messages and its window are matched.</summary>
-    private static string AppToken(string app) => app.Split(' ')[0];
-
     /// <summary>You switched to a program yourself: its messages count as read.</summary>
     private void InboxSeenForeground(IntPtr front)
     {
         if (front == _inboxFront) return;
         _inboxFront = front;
         if (_inbox.Count == 0 || front == IntPtr.Zero || front == _hwnd || OwnsWindow(front)) return;
-        try
-        {
-            Native.GetWindowThreadProcessId(front, out uint pid);
-            using var p = Process.GetProcessById((int)pid);
-            var name = p.ProcessName;
-            RemoveFromInbox(i => AppToken(i.App) is { Length: >= 3 } token && name.Contains(token, StringComparison.OrdinalIgnoreCase));
-        }
-        catch { /* the window is already gone */ }
+        // (asked once per sender, not per message)
+        var theirs = new Dictionary<(string, string), bool>();
+        RemoveFromInbox(i => theirs.TryGetValue((i.AppId, i.App), out bool yes) ? yes
+                             : theirs[(i.AppId, i.App)] = AppWindows.Belongs(front, i.AppId, i.App));
     }
 
-    /// <summary>Bring the program of a message forward; its messages leave the list.</summary>
+    /// <summary>Open the program a message came from (see <see cref="AppWindows.Open"/>); its messages leave the list.</summary>
     private void OpenFromInbox(string app, string appId)
     {
-        RemoveFromInbox(i => i.App == app);
-        if (FocusApp(app)) return;
-        // no window to bring forward (the program sits in the tray): start it the way the Start menu does,
-        // a running messenger then shows its window
-        if (appId.Length == 0 || appId.IndexOfAny(['"', '\r', '\n']) >= 0) return;
-        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"shell:AppsFolder\\{appId}\"") { UseShellExecute = false }); }
-        catch (Exception e) { Log.Write("inbox: " + e.Message); }
+        RemoveFromInbox(i => i.App == app && i.AppId == appId);
+        AppWindows.Open(appId, app);
     }
 
     private void InboxClear_Click(object sender, RoutedEventArgs e) => RemoveFromInbox(_ => true);

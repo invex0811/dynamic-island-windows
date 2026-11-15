@@ -306,15 +306,12 @@ public partial class MainWindow
         return null;
     }
 
-    /// <summary>Bring a program's window forward. False when it has none (closed, or only in the tray).</summary>
+    /// <summary>Bring a program's window forward, by the program's name. False when it has none (closed, or only in the tray).</summary>
     private static bool FocusApp(string app)
     {
-        var token = app.Split(' ')[0];
-        if (token.Length == 0) return false;
-        var p = Process.GetProcesses().FirstOrDefault(x =>
-            x.MainWindowHandle != IntPtr.Zero && x.ProcessName.Contains(token, StringComparison.OrdinalIgnoreCase));
-        if (p == null) return false;
-        Native.SetForegroundWindow(p.MainWindowHandle);
+        var window = AppWindows.Find("", app, out _);
+        if (window == IntPtr.Zero) return false;
+        AppWindows.Activate(window);
         return true;
     }
 
