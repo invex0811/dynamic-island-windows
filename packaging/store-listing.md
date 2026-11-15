@@ -9,7 +9,7 @@ Upload `dist\Atoll-<version>.msix` (built by `tools\make-msix.ps1`). The Store s
 
 ## Properties
 - Category: Utilities & tools
-- Privacy policy URL: https://github.com/Fuwni/dynamic-island-windows/blob/main/PRIVACY.md
+- Privacy policy URL: PRIVACY.md in this repository
 
 ## Store listing (English)
 **Description**

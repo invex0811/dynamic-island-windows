@@ -42,7 +42,7 @@ public sealed class WeatherService
     {
         var h = new HttpClient { Timeout = TimeSpan.FromSeconds(12) };
         // MET Norway and OpenStreetMap ask every app to say who it is
-        h.DefaultRequestHeaders.UserAgent.ParseAdd("Atoll/1.6 (+https://github.com/Fuwni/dynamic-island-windows)");
+        h.DefaultRequestHeaders.UserAgent.ParseAdd("Atoll/1.7 (personal build)");
         return h;
     }
 

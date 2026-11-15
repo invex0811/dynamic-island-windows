@@ -1,5 +1,4 @@
 using System.IO;
-using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -38,7 +37,6 @@ public partial class MainWindow
         new("sky", "Небо", false, "#2B5C8A", "#3B82F6", "ocean"),
     ];
 
-    private const string ThemeStoreUrl = "https://raw.githubusercontent.com/Fuwni/dynamic-island-windows/main/themes/themes.json";
     private static string PhotoPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DynamicIsland", "island-photo.jpg");
 
     // ---------------------------------------------------------------- gallery
@@ -108,27 +106,26 @@ public partial class MainWindow
         DarkSwitch.IsChecked = _settings.DarkTheme;
         ColorBox.Text = _settings.IslandColor;
         BuildThemeGallery();
-        if (ThemeStore.Children.Count > 0) _ = LoadThemeStoreAsync();
+        if (ThemeStore.Children.Count > 0) LoadThemeStore();
         Kick(4);
         PulseGlow(Theme.Parse(t.Accent) ?? Colors.White);
     }
 
     // ---------------------------------------------------------------- online gallery
 
-    private static readonly HttpClient ThemeHttp = new() { Timeout = TimeSpan.FromSeconds(10) };
-
-    private async void ThemeStore_Click(object sender, RoutedEventArgs e) => await LoadThemeStoreAsync();
+    private void ThemeStore_Click(object sender, RoutedEventArgs e) => LoadThemeStore();
 
     /// <summary>
-    /// The theme gallery is a list of colours kept in the project's GitHub repository. Only names and
-    /// colours are read (nothing runs), every value is checked, at most 60 themes.
+    /// More themes: a list of colours shipped inside the app (themes/themes.json). Only names and colours
+    /// are read, every value is checked, at most 60 themes. Nothing is downloaded.
     /// </summary>
-    private async Task LoadThemeStoreAsync()
+    private void LoadThemeStore()
     {
-        ThemeStoreStatus.Text = L.T("Загружаю…");
         try
         {
-            using var doc = JsonDocument.Parse(await ThemeHttp.GetStringAsync(ThemeStoreUrl));
+            using var stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("DynamicIsland.themes.themes.json")
+                               ?? throw new FileNotFoundException("themes.json");
+            using var doc = JsonDocument.Parse(stream);
             ThemeStore.Children.Clear();
             int n = 0;
             foreach (var el in doc.RootElement.EnumerateArray())
@@ -146,11 +143,11 @@ public partial class MainWindow
                 ThemeStore.Children.Add(card);
                 n++;
             }
-            ThemeStoreStatus.Text = n > 0 ? L.F("Тем в галерее: {0}. Хотите свою? Пришлите её в Telegram-канал.", n) : L.T("Галерея пока пуста");
+            ThemeStoreStatus.Text = n > 0 ? L.F("Тем в галерее: {0}", n) : L.T("Галерея пока пуста");
         }
         catch
         {
-            ThemeStoreStatus.Text = L.T("Не удалось загрузить галерею — проверьте интернет");
+            ThemeStoreStatus.Text = L.T("Галерея пока пуста");
         }
         Remeasure();
     }

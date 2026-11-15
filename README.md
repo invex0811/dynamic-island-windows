@@ -14,7 +14,6 @@ notes, a calendar, notifications and a little character that lives in the pill �
 
 **English** · [Русский](README.ru.md)
 
-[![Download](https://img.shields.io/github/v/release/Fuwni/dynamic-island-windows?label=Download&style=for-the-badge&color=30D158)](https://github.com/Fuwni/dynamic-island-windows/releases/latest)
 ![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0A84FF?style=for-the-badge&logo=windows)
 ![.NET 10](https://img.shields.io/badge/.NET-10-5E5CE6?style=for-the-badge&logo=dotnet)
 [![MIT License](https://img.shields.io/badge/license-MIT-8E8E93?style=for-the-badge)](LICENSE)
@@ -24,7 +23,6 @@ notes, a calendar, notifications and a little character that lives in the pill �
 > 🌍 **7 languages:** English, Русский, Українська, Español, Deutsch, Português, 中文 — picked automatically from Windows,
 > or in Settings → Behavior → Language.
 >
-> 🎬 **[Watch the 1.5-minute video tour](https://github.com/Fuwni/dynamic-island-windows/releases/download/v1.2.0/dynamic-island-review-ru.mp4)** (Russian voice-over).
 
 ---
 
@@ -160,7 +158,7 @@ drag the island anywhere or **flick it up** to hide it; it hides itself in games
 
 **Installer (recommended)**
 
-1. Open **[Releases](https://github.com/Fuwni/dynamic-island-windows/releases/latest)** and download **`DynamicIsland-…-setup.exe`**.
+1. Open **[Releases](../../releases/latest)** and download **`DynamicIsland-…-setup.exe`**.
 2. Run it. It installs just for you (no admin rights), adds Atoll to the Start menu and can start it with Windows.
 3. Windows may show a blue **"Windows protected your PC"** window because the app isn't signed with a paid certificate.
    Click **More info → Run anyway**. You only need to do this once.
@@ -305,7 +303,7 @@ Nothing can be drawn over *exclusive* fullscreen games; switch the game to borde
 You need the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
-git clone https://github.com/Fuwni/dynamic-island-windows.git
+git clone https://github.com/invex0811/dynamic-island-windows.git
 cd dynamic-island-windows
 dotnet run -c Release
 ```

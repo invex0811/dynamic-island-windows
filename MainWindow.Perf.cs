@@ -124,6 +124,6 @@ public partial class MainWindow
         var text = PerfReport();
         try { Clipboard.SetText(text); } catch { }
         Log.Write("perf report:\n" + text);
-        ShowToast("", L.T("Отчёт скопирован"), L.T("Вставьте его в комментарии или в Telegram-канал"));
+        ShowToast("", L.T("Отчёт скопирован"), null);
     }
 }

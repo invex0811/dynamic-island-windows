@@ -44,6 +44,7 @@
     <None Update="Assets\claude-hook.ps1" CopyToOutputDirectory="PreserveNewest" />
     <Resource Include="Assets\icon.ico" />
     <EmbeddedResource Include="Assets\lang\*.json" />
+    <EmbeddedResource Include="themes\themes.json" />
   </ItemGroup>
 
 </Project>

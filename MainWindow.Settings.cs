@@ -369,12 +369,9 @@ public partial class MainWindow
         NotifyHint.Visibility = hint == null ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    /// <summary>The Atoll channel on Telegram.</summary>
-    private const string TelegramUrl = "https://t.me/atollisland";
     /// <summary>Where donations go; the button stays hidden while this is empty.</summary>
     private const string DonateUrl = "";
 
-    private void Telegram_Click(object sender, RoutedEventArgs e) => SafeShell.OpenUrl(TelegramUrl);
     private void Donate_Click(object sender, RoutedEventArgs e) { if (DonateUrl.Length > 0) SafeShell.OpenUrl(DonateUrl); }
 
     private void OpenHotkey_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
