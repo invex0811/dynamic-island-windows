@@ -14,6 +14,9 @@ public static class Autostart
         Task.Run(async () => await Windows.ApplicationModel.StartupTask.GetAsync(TaskId)).GetAwaiter().GetResult();
 
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    // Windows' own switch for each Run entry (Task Manager › Startup apps, Settings › Apps › Startup):
+    // 12 bytes, the first one odd when the entry is switched off there. Without a value the entry is on.
+    private const string ApprovedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
     private const string ValueName = "DynamicIsland";
 
     private static string Command => $"\"{Environment.ProcessPath}\"";
@@ -28,8 +31,10 @@ public static class Autostart
                 catch { return false; }
             }
             using var key = Registry.CurrentUser.OpenSubKey(RunKey);
-            return key?.GetValue(ValueName) is string value &&
-                   string.Equals(value, Command, StringComparison.OrdinalIgnoreCase);
+            if (key?.GetValue(ValueName) is not string value || !string.Equals(value, Command, StringComparison.OrdinalIgnoreCase)) return false;
+            // the entry is there, but switched off in Windows' list of startup apps: it won't start
+            using var approved = Registry.CurrentUser.OpenSubKey(ApprovedKey);
+            return approved?.GetValue(ValueName) is not byte[] { Length: > 0 } flag || (flag[0] & 1) == 0;
         }
     }
 
@@ -46,5 +51,8 @@ public static class Autostart
         using var key = Registry.CurrentUser.CreateSubKey(RunKey);
         if (enabled) key.SetValue(ValueName, Command);
         else key.DeleteValue(ValueName, throwOnMissingValue: false);
+        // switched on here: it must not stay switched off in Windows' list; removed: nothing of it stays there
+        using var approved = Registry.CurrentUser.CreateSubKey(ApprovedKey);
+        approved.DeleteValue(ValueName, throwOnMissingValue: false);
     }
 }
