@@ -38,7 +38,8 @@ public partial class MainWindow
 
         // what's going on right now
         if (_timer.Active) Add(TabTimer, _timer.Running ? 3.2 : 2.2);
-        if (_discordInCall) Add(TabSystem, 2.4);
+        if (_discordInCall && DiscordOnIsland) Add(TabSystem, 2.4);
+        if (_inbox.Count > 0) Add(TabNotify, 2.8);   // unread messages wait
         if ((DateTime.Now - _copiedAt).TotalSeconds < 25) Add(TabClip, 2.6);
         if (_lastMedia?.IsPlaying == true) Add(TabMusic, 1.4);
 

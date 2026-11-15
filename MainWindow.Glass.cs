@@ -290,7 +290,7 @@ public partial class MainWindow
     private void UpdateAuraVisibility()
     {
         // never over a game or a full-screen video: the glow would cost frames there
-        bool show = _auraBrush != null && !Lite && _mode == Mode.Compact && !_recording.IsRecording && !_gameMode && !_fullscreenHidden && !_hidden;
+        bool show = _auraBrush != null && !Lite && _mode == Mode.Compact && !_recording.IsRecording && !_gameMode && !_fullscreenHidden && !_overFullscreen && !_hidden;
         if (show && _auraPaused) { _auraPaused = false; SetupAura(); return; }   // starts the glow again
         if (!show && _auraBrush != null && !_auraPaused)
         {
@@ -307,7 +307,7 @@ public partial class MainWindow
 
     // ================================================================ header: page dots
 
-    private RadioButton[] PageTabs => [TabHome, TabMusic, TabWeather, TabChat, TabTimer, TabClip, TabNotes, TabCalendar, TabSystem];
+    private RadioButton[] PageTabs => [TabHome, TabMusic, TabWeather, TabChat, TabTimer, TabClip, TabNotes, TabCalendar, TabNotify, TabSystem];
     private bool _iconsShown;
 
     private void UpdatePageDots()

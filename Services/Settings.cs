@@ -51,6 +51,8 @@ public sealed class Settings
     public bool ShowCapsLock { get; set; } = true;
     /// <summary>The chat page in its large size (sign-in pages and captchas fit).</summary>
     public bool ChatLarge { get; set; }
+    /// <summary>Show a Discord call on the island at all (off: neither the side island nor the pill mention it).</summary>
+    public bool ShowDiscordCall { get; set; } = true;
     /// <summary>A Discord call as a little island to the right of the main one (instead of inside the pill).</summary>
     public bool DiscordSidePill { get; set; } = true;
     /// <summary>The smart island: opens on what matters now, learns your habits, keeps quiet while you type.</summary>
@@ -91,9 +93,24 @@ public sealed class Settings
 
     // live activities & extras
     public bool GameStats { get; set; }
+    // what the game pill lists (each can be turned off)
+    public bool GameShowFps { get; set; } = true;
+    public bool GameShowCpu { get; set; } = true;
+    public bool GameShowGpu { get; set; } = true;
+    public bool GameShowRam { get; set; }
     public bool Karaoke { get; set; } = true;
+    /// <summary>The folded pill keeps the clock when a live activity (track, call, timer…) takes the middle text.</summary>
+    public bool AlwaysShowTime { get; set; }
+    /// <summary>The folded pill names the playing track ("Artist — Title") next to the cover.</summary>
+    public bool ShowTrackInPill { get; set; }
     public bool MirrorNotifications { get; set; } = true;
     public bool MirrorAllApps { get; set; }
+    /// <summary>How long a message stays on the island, in seconds (2…30).</summary>
+    public int ToastSeconds { get; set; } = 5;
+    /// <summary>Messages show on the island only: Windows' own banners are switched off for the apps the island mirrors.</summary>
+    public bool IslandOnlyNotifications { get; set; }
+    /// <summary>Apps whose Windows banner we switched off, with what they had before (see WindowsBanners).</summary>
+    public Dictionary<string, string> HiddenBanners { get; set; } = [];
     public string CalendarIcs { get; set; } = "";
     /// <summary>Files parked on the shelf (paths only, the files stay where they are).</summary>
     public List<string> Shelf { get; set; } = [];
@@ -122,8 +139,6 @@ public sealed class Settings
     public string TranslateTarget => string.IsNullOrWhiteSpace(TranslateTo) ? Loc.Lang : TranslateTo;
     /// <summary>Interface language: "" = like Windows, or en / ru / uk / es / de / pt / zh.</summary>
     public string Language { get; set; } = "";
-    /// <summary>Look for a newer release on GitHub now and then.</summary>
-    public bool AutoUpdateCheck { get; set; } = true;
     /// <summary>Apps pinned to the row at the bottom of Home.</summary>
     public List<string> DockApps { get; set; } = [];
     public bool HomeApps { get; set; } = true;

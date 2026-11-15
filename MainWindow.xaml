@@ -137,6 +137,9 @@
 
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
             <!-- who uses the mic / camera right now (like the iOS dots) -->
+            <!-- the clock, when a live activity has taken the middle text ("always show the time") -->
+            <TextBlock x:Name="CompactClock" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg2}"
+                       VerticalAlignment="Center" Margin="0,0,8,0" Visibility="Collapsed"/>
             <Ellipse x:Name="MicDot" Width="7" Height="7" Fill="#FF9F0A" Margin="0,0,5,0" Visibility="Collapsed"/>
             <Ellipse x:Name="CamDot" Width="7" Height="7" Fill="#30D158" Margin="0,0,5,0" Visibility="Collapsed"/>
             <Border x:Name="UnreadBadge" Background="{DynamicResource AccentBlue}" CornerRadius="8" Padding="6,1"
@@ -267,6 +270,7 @@
             <RadioButton x:Name="TabClip" Style="{StaticResource TabButton}" GroupName="Tabs" Content="Буфер" Tag="&#xE77F;" Checked="Tab_Checked"/>
             <RadioButton x:Name="TabNotes" Style="{StaticResource TabButton}" GroupName="Tabs" Content="Заметки" Tag="&#xE70B;" Checked="Tab_Checked"/>
             <RadioButton x:Name="TabCalendar" Style="{StaticResource TabButton}" GroupName="Tabs" Content="Календарь" Tag="&#xE787;" Checked="Tab_Checked"/>
+            <RadioButton x:Name="TabNotify" Style="{StaticResource TabButton}" GroupName="Tabs" Content="Уведомления" Tag="&#xEA8F;" Checked="Tab_Checked"/>
             <RadioButton x:Name="TabSystem" Style="{StaticResource TabButton}" GroupName="Tabs" Content="Система" Tag="&#xE7FC;" Checked="Tab_Checked"/>
           </StackPanel>
           </Grid>
@@ -747,6 +751,18 @@
               </ScrollViewer>
             </StackPanel>
 
+            <!-- ======== NOTIFICATIONS ======== -->
+            <StackPanel x:Name="NotifyPage" Width="580" Visibility="Collapsed">
+              <DockPanel Margin="4,0,0,8" MinHeight="28">
+                <Button x:Name="InboxClear" DockPanel.Dock="Right" Style="{StaticResource GhostPill}" Padding="12,5" Content="Очистить все"
+                        Click="InboxClear_Click" Visibility="Collapsed"/>
+                <TextBlock Style="{StaticResource Caption}" Text="НЕПРОЧИТАННЫЕ" VerticalAlignment="Center"/>
+              </DockPanel>
+              <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Hidden">
+                <StackPanel x:Name="InboxList"/>
+              </ScrollViewer>
+            </StackPanel>
+
             <!-- ======== CALENDAR ======== -->
             <StackPanel x:Name="CalendarPage" Width="580" Visibility="Collapsed">
               <Border Style="{StaticResource Tile}">
@@ -1110,22 +1126,6 @@
                     </StackPanel>
                   </DockPanel>
                 </Border>
-                <Border x:Name="UpdatesTile" Style="{StaticResource Tile}" Margin="0,0,0,10">
-                  <StackPanel>
-                    <DockPanel>
-                      <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource AccentPill}" Padding="14,7"
-                              Visibility="Collapsed" Click="UpdateNow_Click"/>
-                      <Button DockPanel.Dock="Right" Style="{StaticResource GhostPill}" Margin="0,0,8,0" Padding="12,7"
-                              Click="CheckUpdates_Click" Content="Проверить сейчас"/>
-                      <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Обновления" FontSize="13"/>
-                        <TextBlock x:Name="UpdateStatus" Style="{StaticResource Muted}" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                      </StackPanel>
-                    </DockPanel>
-                    <CheckBox x:Name="AutoUpdateSwitch" Style="{StaticResource Switch}" Margin="0,10,0,0" Click="AutoUpdate_Click"
-                              Content="Проверять обновления автоматически"/>
-                  </StackPanel>
-                </Border>
                 <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
                   <StackPanel>
                     <CheckBox x:Name="HoverSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Раскрывать при наведении"/>
@@ -1144,6 +1144,7 @@
                     <CheckBox x:Name="LockSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Закрепить на месте (не перетаскивать)"/>
                     <CheckBox x:Name="CapsSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать Caps Lock"/>
                     <CheckBox x:Name="LayoutSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать смену раскладки"/>
+                    <CheckBox x:Name="DiscordSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать звонок Discord на острове"/>
                     <CheckBox x:Name="DiscordSideSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Звонок Discord — отдельным островком справа"/>
                     <CheckBox x:Name="CaptureSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Скрывать остров на скриншотах и демонстрации экрана"/>
                     <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8"
@@ -1162,6 +1163,12 @@
                             Content="Скопировать отчёт о плавности" Click="CopyPerfReport_Click"
                             ToolTip="Если остров дёргается — отправьте этот отчёт разработчику"/>
                     <CheckBox x:Name="GameStatsSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="В играх показывать FPS и нагрузку вместо полного скрытия"/>
+                    <StackPanel x:Name="GameStatsOptions" Margin="18,0,0,4">
+                      <CheckBox x:Name="GameFpsSwitch" Style="{StaticResource Switch}" Margin="0,2" Click="Behavior_Click" Content="FPS"/>
+                      <CheckBox x:Name="GameCpuSwitch" Style="{StaticResource Switch}" Margin="0,2" Click="Behavior_Click" Content="Загрузка процессора (CPU)"/>
+                      <CheckBox x:Name="GameGpuSwitch" Style="{StaticResource Switch}" Margin="0,2" Click="Behavior_Click" Content="Загрузка видеокарты (GPU)"/>
+                      <CheckBox x:Name="GameRamSwitch" Style="{StaticResource Switch}" Margin="0,2" Click="Behavior_Click" Content="Оперативная память (RAM)"/>
+                    </StackPanel>
                     <DockPanel Margin="0,0,0,8">
                       <Button x:Name="FpsGrantButton" DockPanel.Dock="Right" Style="{StaticResource GhostPill}" Padding="12,5"
                               Content="Разрешить" Visibility="Collapsed" Click="FpsGrant_Click"/>
@@ -1171,9 +1178,21 @@
                                    Text="Поверх игр в «эксклюзивном полноэкранном» режиме ничего показать нельзя — выберите «Оконный без рамки»."/>
                       </StackPanel>
                     </DockPanel>
+                    <CheckBox x:Name="AlwaysTimeSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Всегда показывать время"/>
+                    <CheckBox x:Name="TrackTitleSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Название песни и исполнитель в острове"/>
                     <CheckBox x:Name="KaraokeSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Слова песни прямо в острове (караоке)"/>
                     <CheckBox x:Name="NotifySwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Сообщения Telegram, Discord, Viber… на острове"/>
                     <CheckBox x:Name="NotifyAllSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Уведомления всех приложений, не только мессенджеров"/>
+                    <CheckBox x:Name="IslandOnlySwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Только на острове: без всплывающих уведомлений Windows"/>
+                    <TextBlock x:Name="IslandOnlyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8"
+                               Text="Баннеры Windows выключаются только у программ, чьи сообщения показывает остров, и возвращаются, когда Atoll закрыт. Сообщения остаются в центре уведомлений"/>
+                    <DockPanel x:Name="ToastSecondsRow" Margin="0,0,0,8">
+                      <TextBlock DockPanel.Dock="Left" Text="Сколько висит уведомление" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="12.5"/>
+                      <TextBlock x:Name="ToastSecondsValue" DockPanel.Dock="Right" Style="{StaticResource Muted}" VerticalAlignment="Center" MinWidth="40"
+                                 TextAlignment="Right" Margin="10,0,0,0"/>
+                      <Slider x:Name="ToastSecondsSlider" Style="{StaticResource SoftSlider}" Minimum="2" Maximum="30" TickFrequency="1"
+                              IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="ToastSeconds_ValueChanged"/>
+                    </DockPanel>
                     <TextBlock x:Name="NotifyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8" Visibility="Collapsed"/>
                     <CheckBox x:Name="AutostartSwitch" Style="{StaticResource Switch}" Click="Autostart_Click" Content="Запускать вместе с Windows"/>
                     <CheckBox x:Name="CleanDesktopSwitch" Style="{StaticResource Switch}" Click="CleanDesktopSwitch_Click"

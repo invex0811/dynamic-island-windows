@@ -191,12 +191,19 @@ public partial class MainWindow
         CleanDesktopSwitch.IsChecked = _settings.CleanDesktop;
         HandDrawnSwitch.IsChecked = _settings.HandDrawn;
         GameStatsSwitch.IsChecked = _settings.GameStats;
+        GameFpsSwitch.IsChecked = _settings.GameShowFps;
+        GameCpuSwitch.IsChecked = _settings.GameShowCpu;
+        GameGpuSwitch.IsChecked = _settings.GameShowGpu;
+        GameRamSwitch.IsChecked = _settings.GameShowRam;
+        GameStatsOptions.Visibility = _settings.GameStats ? Visibility.Visible : Visibility.Collapsed;
         LockSwitch.IsChecked = _settings.LockPosition;
         SmartSwitch.IsChecked = _settings.SmartIsland;
         FillHideAppPicker();
         CapsSwitch.IsChecked = _settings.ShowCapsLock;
         LayoutSwitch.IsChecked = _settings.ShowKeyboardLayout;
+        DiscordSwitch.IsChecked = _settings.ShowDiscordCall;
         DiscordSideSwitch.IsChecked = _settings.DiscordSidePill;
+        DiscordSideSwitch.Visibility = _settings.ShowDiscordCall ? Visibility.Visible : Visibility.Collapsed;
         CaptureSwitch.IsChecked = HideFromCapture;
         ScaleSlider.Value = Math.Clamp(_settings.IslandScale, 80, 130);
         ScaleValue.Text = $"{_settings.IslandScale}%";
@@ -211,9 +218,15 @@ public partial class MainWindow
         DonateButton.Visibility = DonateUrl.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         RefreshFpsAccess();
         KaraokeSwitch.IsChecked = _settings.Karaoke;
+        TrackTitleSwitch.IsChecked = _settings.ShowTrackInPill;
+        AlwaysTimeSwitch.IsChecked = _settings.AlwaysShowTime;
         NotifySwitch.IsChecked = _settings.MirrorNotifications;
         RefreshNotifyHint();
         NotifyAllSwitch.IsChecked = _settings.MirrorAllApps;
+        IslandOnlySwitch.IsChecked = _settings.IslandOnlyNotifications;
+        ToastSecondsSlider.Value = Math.Clamp(_settings.ToastSeconds, 2, 30);
+        ToastSecondsValue.Text = L.F("{0} с", Math.Clamp(_settings.ToastSeconds, 2, 30));
+        IslandOnlySwitch.Visibility = IslandOnlyHint.Visibility = _settings.MirrorNotifications ? Visibility.Visible : Visibility.Collapsed;
         ColorBox.Text = _settings.IslandColor;
         HomeActionsChip.IsChecked = _settings.HomeActions;
         HomeMusicChip.IsChecked = _settings.HomeMusic;
@@ -306,11 +319,20 @@ public partial class MainWindow
         _settings.ExpandOnHover = HoverSwitch.IsChecked == true;
         _settings.HideInFullscreen = FullscreenSwitch.IsChecked == true;
         _settings.GameStats = GameStatsSwitch.IsChecked == true;
+        bool fpsWas = _settings.GameShowFps;
+        _settings.GameShowFps = GameFpsSwitch.IsChecked == true;
+        _settings.GameShowCpu = GameCpuSwitch.IsChecked == true;
+        _settings.GameShowGpu = GameGpuSwitch.IsChecked == true;
+        _settings.GameShowRam = GameRamSwitch.IsChecked == true;
+        GameStatsOptions.Visibility = _settings.GameStats ? Visibility.Visible : Visibility.Collapsed;
+        if (fpsWas != _settings.GameShowFps && _gameMode) OnGameModeChanged(true);   // start or stop counting frames right away
         _settings.LockPosition = LockSwitch.IsChecked == true;
         _settings.SmartIsland = SmartSwitch.IsChecked == true;
         _settings.ShowCapsLock = CapsSwitch.IsChecked == true;
         _settings.ShowKeyboardLayout = LayoutSwitch.IsChecked == true;
+        _settings.ShowDiscordCall = DiscordSwitch.IsChecked == true;
         _settings.DiscordSidePill = DiscordSideSwitch.IsChecked == true;
+        DiscordSideSwitch.Visibility = _settings.ShowDiscordCall ? Visibility.Visible : Visibility.Collapsed;
         if (HideFromCapture != (CaptureSwitch.IsChecked == true))
         {
             _settings.CaptureHidden = CaptureSwitch.IsChecked == true;
@@ -319,9 +341,14 @@ public partial class MainWindow
             UpdateGlassFill();
         }
         _settings.Karaoke = KaraokeSwitch.IsChecked == true;
+        _settings.ShowTrackInPill = TrackTitleSwitch.IsChecked == true;
+        _settings.AlwaysShowTime = AlwaysTimeSwitch.IsChecked == true;
         _settings.MirrorNotifications = NotifySwitch.IsChecked == true;
         RefreshNotifyHint();
         _settings.MirrorAllApps = NotifyAllSwitch.IsChecked == true;
+        _settings.IslandOnlyNotifications = IslandOnlySwitch.IsChecked == true;
+        IslandOnlySwitch.Visibility = IslandOnlyHint.Visibility = _settings.MirrorNotifications ? Visibility.Visible : Visibility.Collapsed;
+        ApplyIslandOnly();
         _settings.Save();
     }
 
@@ -368,6 +395,14 @@ public partial class MainWindow
         LiquidValue.Text = $"{_settings.LiquidStrength}%";
         _settings.Save();
         Kick(4);   // a wave to show the new strength
+    }
+
+    private void ToastSeconds_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_settingsLoading || !IsLoaded) return;
+        _settings.ToastSeconds = (int)Math.Round(ToastSecondsSlider.Value);
+        ToastSecondsValue.Text = L.F("{0} с", _settings.ToastSeconds);
+        _settings.Save();
     }
 
     private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

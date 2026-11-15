@@ -35,7 +35,7 @@ public partial class MainWindow
         bool folded = _mode is Mode.Compact or Mode.Toast or Mode.Claude;
         Season.Compact = folded;
         // nobody sees it: hidden, over a game or full-screen app — don't spend anything on it
-        if (_hidden || _fullscreenHidden || _gameMode || !IsVisible) return;
+        if (_hidden || _fullscreenHidden || _gameMode || _overFullscreen || !IsVisible) return;
         if (Lite)
         {
             // light graphics: a still picture of the season, drawn once

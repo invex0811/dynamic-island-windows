@@ -11,10 +11,13 @@ namespace DynamicIsland.Services;
 /// </summary>
 public sealed class NotificationMirror
 {
-    public sealed record Message(string App, string Title, string Body, BitmapImage? Logo);
+    public sealed record Message(string App, string Title, string Body, BitmapImage? Logo, string AppId);
 
     private static readonly string[] Messengers =
         ["telegram", "discord", "viber", "whatsapp", "signal", "slack", "teams", "skype", "vk", "messenger", "element", "zoom"];
+
+    /// <summary>A messenger, by its name or its Windows app id.</summary>
+    public static bool IsMessenger(string app) => Messengers.Any(m => app.Contains(m, StringComparison.OrdinalIgnoreCase));
 
     private readonly HashSet<uint> _seen = [];
     private bool _primed;
@@ -93,7 +96,7 @@ public sealed class NotificationMirror
             {
                 var app = n.AppInfo?.DisplayInfo?.DisplayName ?? "";
                 if (app.Contains("Dynamic Island", StringComparison.OrdinalIgnoreCase) || app.Contains("Atoll", StringComparison.OrdinalIgnoreCase)) continue;
-                if (!allApps && !Messengers.Any(m => app.Contains(m, StringComparison.OrdinalIgnoreCase))) continue;
+                if (!allApps && !IsMessenger(app)) continue;
 
                 var binding = n.Notification?.Visual?.GetBinding(KnownNotificationBindings.ToastGeneric);
                 var texts = binding?.GetTextElements().Select(t => t.Text).Where(t => !string.IsNullOrWhiteSpace(t)).ToList() ?? [];
@@ -118,7 +121,9 @@ public sealed class NotificationMirror
                 }
                 catch { logo = null; }
 
-                result.Add(new Message(app, title, body, logo));
+                string appId = "";
+                try { appId = n.AppInfo?.AppUserModelId ?? ""; } catch { }
+                result.Add(new Message(app, title, body, logo, appId));
             }
             catch { }
         }

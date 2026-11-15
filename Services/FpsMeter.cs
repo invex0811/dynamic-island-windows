@@ -41,7 +41,11 @@ public sealed class FpsMeter : IDisposable
             new Thread(() =>
             {
                 try { session.Source.Process(); }
-                catch (Exception e) { Log.Write("fps: " + e.Message); }
+                catch (Exception e)
+                {
+                    // stopped on purpose (the game was left): the reader ending with an error is expected
+                    if (ReferenceEquals(_session, session)) { Log.Write("fps: " + e.Message); Stop(); }
+                }
             }) { IsBackground = true, Name = "FPS" }.Start();
             return true;
         }
@@ -49,6 +53,21 @@ public sealed class FpsMeter : IDisposable
         catch (Exception e) { Log.Write("fps start: " + e.Message); AccessDenied = e.HResult == unchecked((int)0x80070005); }
         _session = null;
         return false;
+    }
+
+    private static bool _probedOk;
+
+    /// <summary>May this user read frame events? Opens a session and closes it, without reading anything.</summary>
+    public static bool CanMeasure()
+    {
+        if (_probedOk) return true;
+        try
+        {
+            using var session = new TraceEventSession("AtollFpsProbe") { StopOnDispose = true };
+            session.EnableProvider(Dxgi, TraceEventLevel.Informational);
+            return _probedOk = true;
+        }
+        catch { return false; }
     }
 
     public void Stop()

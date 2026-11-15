@@ -32,6 +32,7 @@ public static class Uninstaller
     public static void RemoveRegistrations()
     {
         try { if (Settings.Current.CleanDesktop) CleanDesktop.Apply(false, Settings.Current.TaskbarWasAutoHide, Settings.Current.IconsWereVisible); } catch { }
+        try { WindowsBanners.Restore(forget: true); } catch { }
         try { if (ClaudeHooks.IsInstalled) ClaudeHooks.Uninstall(); } catch (Exception e) { Log.Write("uninstall hooks: " + e.Message); }
         try { if (CodexHooks.IsInstalled) CodexHooks.Uninstall(); } catch (Exception e) { Log.Write("uninstall codex hooks: " + e.Message); }
         // only our own autostart entry: another copy of the island may own it

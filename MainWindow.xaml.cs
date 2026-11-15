@@ -103,7 +103,6 @@ public partial class MainWindow : Window
         InitHome();
         InitSettingsPage();
         InitBuddyReactions();
-        InitUpdates();
         InitControlCenter();
         InitApps();
         ApplyPhoto();
@@ -588,18 +587,6 @@ public partial class MainWindow : Window
                     Log.Write($"clean-test: off -> autohide={CleanDesktop.TaskbarAutoHide} icons={CleanDesktop.IconsVisible} (was {was}/{icons})");
                     return;
                 }
-                if (action == "update-dry")   // test: check + download + verify the newest installer, but don't run it
-                {
-                    try
-                    {
-                        var info = await Updater.CheckAsync();
-                        if (info == null) { Log.Write("update-dry: up to date"); return; }
-                        var path = await Updater.DownloadAsync(info, null);
-                        Log.Write($"update-dry: {info.Tag} -> {path} ({new System.IO.FileInfo(path).Length} bytes, sha256 {(info.Sha256 != null ? "verified" : "not published")})");
-                    }
-                    catch (Exception ex) { Log.Write("update-dry failed: " + ex.Message); }
-                    return;
-                }
                 if (action == "kick") { Kick(6); Squish(0.92); await Task.Delay(120); Unsquish(3); return; }
                 if (action == "timer") { _timer.SetKind(TimerKind.Timer); _timer.SetDuration(TimeSpan.FromMinutes(secs > 0 ? secs : 5)); _timer.Start(); return; }
                 RunAction(action);
@@ -716,6 +703,7 @@ public partial class MainWindow : Window
         ShutdownChat();
         _settings.Save();
         FocusMode.End(); // never leave Windows notifications switched off
+        if (!IsToolRun) WindowsBanners.Restore(forget: false); // the banners work while the island is closed
         _fps.Dispose();
         ShutdownControlCenter(); // taskbar and desktop icons come back
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
@@ -795,6 +783,10 @@ public partial class MainWindow : Window
 
     // ================================================================ frame loop
 
+    /// <summary>The frame loop has nothing to move but the ambient effects (no morph, no drag, no squish).</summary>
+    private bool AmbientOnly => _w.IsSettled && _h.IsSettled && _y.IsSettled && !_posActive && !_dragging &&
+                                _sx.IsSettled && _sy.IsSettled && _skew.IsSettled;
+
     private void StartRendering()
     {
         if (_rendering) return;
@@ -807,6 +799,11 @@ public partial class MainWindow : Window
     {
         var now = ((RenderingEventArgs)e).RenderingTime;
         if (now == _lastFrame) return;
+        // Nothing is changing size or place: only the ambient motion (the edge breathing with the music or
+        // leaning to the cursor) keeps this loop alive, for as long as the music plays. Every step redraws
+        // the whole see-through window, and this runs at the monitor's rate — 240 times a second on a
+        // 240 Hz screen, most of a CPU core. 60 is plenty for a slow swell.
+        if (AmbientOnly && _lastFrame != TimeSpan.Zero && (now - _lastFrame).TotalMilliseconds < 15.5) return;
         double dt = _lastFrame == TimeSpan.Zero ? 1 / 60.0 : Math.Min(0.05, (now - _lastFrame).TotalSeconds);
         _lastFrame = now;
 
@@ -948,9 +945,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private RadioButton[] Tabs => [TabHome, TabMusic, TabWeather, TabChat, TabTimer, TabClip, TabNotes, TabCalendar, TabSystem, TabSettings];
+    private RadioButton[] Tabs => [TabHome, TabMusic, TabWeather, TabChat, TabTimer, TabClip, TabNotes, TabCalendar, TabNotify, TabSystem, TabSettings];
 
-    private FrameworkElement[] AllPages => [HomePage, MusicPage, WeatherPage, ChatPage, TimerPage, ClipPage, NotesPage, CalendarPage, SystemPage, SettingsPage];
+    private FrameworkElement[] AllPages => [HomePage, MusicPage, WeatherPage, ChatPage, TimerPage, ClipPage, NotesPage, CalendarPage, NotifyPage, SystemPage, SettingsPage];
 
     private FrameworkElement CurrentPage
     {
@@ -1115,6 +1112,7 @@ public partial class MainWindow : Window
         else if (TabClip.IsChecked == true) RenderClipSection();
         else if (TabNotes.IsChecked == true) RenderNotes();
         else if (TabCalendar.IsChecked == true) RenderCalendar();
+        else if (TabNotify.IsChecked == true) RenderInbox();
         else if (TabTimer.IsChecked == true) RenderTimer();
         else if (TabSystem.IsChecked == true) _ = RefreshSystemAsync(full: true);
         Remeasure();
@@ -1422,14 +1420,33 @@ public partial class MainWindow : Window
     // ================================================================ fullscreen & topmost
 
     private bool _gameMode;
+    /// <summary>
+    /// A full-screen app (a game, a video) is in front, whatever the settings say about hiding. The island is a
+    /// see-through window on top of it: every redraw makes Windows compose the game's frame with ours, which
+    /// costs the game frames. So the folded island stands still there: no eyes following the cursor, no edge
+    /// breathing with the music, no glow, no equaliser.
+    /// </summary>
+    private bool _overFullscreen;
+    private bool Quiet => _overFullscreen && _mode == Mode.Compact;
 
     private void WatchFullscreen()
     {
         // remember where the user was typing, so clipboard items can be pasted back there
         var fg = Native.GetForegroundWindow();
         if (fg != IntPtr.Zero && fg != _hwnd && !OwnsWindow(fg)) _lastExternalWindow = fg;
+        InboxSeenForeground(fg);
 
-        bool fullscreen = _settings.HideInFullscreen && _hwnd != IntPtr.Zero && Native.IsFullscreenAppActive(_hwnd);
+        // either switch needs to know about a full-screen app: "hide in fullscreen" hides, "FPS in games" shows the stats pill
+        // (Settings keeps the two exclusive, so gating this on "hide" alone meant the stats pill never appeared)
+        bool over = _hwnd != IntPtr.Zero && Native.IsFullscreenAppActive(_hwnd);
+        if (over != _overFullscreen)
+        {
+            _overFullscreen = over;
+            UpdateAuraVisibility();
+            SetEqualizer(_lastMedia?.IsPlaying == true);
+            UpdateEyesVisibility();
+        }
+        bool fullscreen = (_settings.HideInFullscreen || _settings.GameStats) && over;
         // game mode: keep a tiny stats pill instead of hiding completely
         bool game = _demoGame || (fullscreen && _settings.GameStats);
         if (game != _gameMode)
@@ -1492,15 +1509,25 @@ public partial class MainWindow : Window
         }
     }
 
+    // what the live activity in the pill takes over (set by UpdateLive): its icon stands in for the character
+    // and the cover, a long text pushes the weather out
+    private bool _liveHasIcon, _liveLongText;
+
+    /// <summary>
+    /// Who sits on the pill's left and right side. Called from many places (every tick, each media update,
+    /// folding the island…), so the live activity's say is applied here too — otherwise the character and the
+    /// cover flashed next to the activity's icon until the next tick.
+    /// </summary>
     private void UpdateEyesVisibility()
     {
         bool playing = _lastMedia?.IsPlaying == true;
-        bool showArt = playing && _lastMedia?.Art != null && !_recording.IsRecording;
+        bool showArt = playing && _lastMedia?.Art != null && !_recording.IsRecording && !_liveHasIcon;
         RecDot.Visibility = _recording.IsRecording ? Visibility.Visible : Visibility.Collapsed;
         MiniArt.Visibility = showArt ? Visibility.Visible : Visibility.Collapsed;
-        Eyes.Visibility = !_recording.IsRecording ? Visibility.Visible : Visibility.Collapsed; // the character stays next to the cover
-        EqBars.Visibility = playing ? Visibility.Visible : Visibility.Collapsed;
-        CompactWeather.Visibility = playing ? Visibility.Collapsed : Visibility.Visible;
+        Eyes.Visibility = !_recording.IsRecording && !_liveHasIcon ? Visibility.Visible : Visibility.Collapsed; // the character stays next to the cover
+        // over a game the equaliser would stand still (see _overFullscreen): frozen bars look broken, so it steps aside
+        EqBars.Visibility = playing && !_overFullscreen ? Visibility.Visible : Visibility.Collapsed;
+        CompactWeather.Visibility = playing || _liveLongText ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private readonly List<Views.CharacterView> _previewCharacters = [];
@@ -1518,6 +1545,7 @@ public partial class MainWindow : Window
         Native.GetCursorPos(out var cursor);
         if (_fakeCursor is Native.POINT fake) cursor = fake;   // screenshots / tests
         CheckClickOutside(cursor);
+        if (Quiet) return;   // over a game the folded island doesn't follow the cursor (see _overFullscreen)
         if (_mode == Mode.Compact && !_rendering && _gazeTicks % 3 != 0)
         {
             double dx = cursor.X - (Left + Width / 2) * Dpi, dy = cursor.Y - Top * Dpi;

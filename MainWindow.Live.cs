@@ -56,6 +56,7 @@ public partial class MainWindow
     {
         if (!await _notifications.InitAsync()) Log.Write("notification listener: access not allowed");
         if (NotificationMirror.CenterDisabled()) Log.Write("notification listener: the notification center is disabled by policy (DisableNotificationCenter): nothing to read");
+        ApplyIslandOnly();
         await _notifications.PollAsync(_settings.MirrorAllApps); // remember what's already there
     }
 
@@ -65,7 +66,6 @@ public partial class MainWindow
     {
         WatchTyping();
         _timer.Tick();
-        UpdateEyesVisibility();
 
         string? icon = null, text = null;
         double ring = -1;
@@ -90,7 +90,7 @@ public partial class MainWindow
                 lives.Add(("focus", "\uE708", L.F("Не беспокоить · {0}:{1:00}", (int)left.TotalMinutes, left.Seconds), -1,
                            new SolidColorBrush(Color.FromRgb(0x5E, 0x5C, 0xE6))));
             }
-            if (_discordInCall && !DiscordBeside)
+            if (_discordInCall && DiscordOnIsland && !DiscordBeside)
                 lives.Add(("discord", "\uE7F6",
                            _audio.MicMuted == true ? L.T("Discord · микрофон выкл") : _discordSpeaking ? L.T("Discord · говорят") : L.T("Discord · в канале"),
                            _discordSpeaking ? 1 : 0, new SolidColorBrush(Color.FromRgb(0x58, 0x65, 0xF2))));
@@ -106,7 +106,9 @@ public partial class MainWindow
             if (_lastMedia?.IsPlaying == true)
             {
                 string? karaoke = _settings.Karaoke && _currentLyrics?.Synced == true && LyricCur.Text is { Length: > 0 } line && line != "♪" ? Shorten(line, 44) : null;
-                lives.Add(("music", null, karaoke, -1, ringBrush));   // the cover, the equaliser and the eyes
+                // no lyric line to show: the track's name, when asked for
+                string? track = karaoke == null && _settings.ShowTrackInPill ? TrackLabel(_lastMedia) : null;
+                lives.Add(("music", null, karaoke ?? track, -1, ringBrush));   // the cover, the equaliser and the eyes
             }
         }
         var pick = lives.FirstOrDefault(l => l.Id == _liveChoice);
@@ -122,20 +124,26 @@ public partial class MainWindow
             LiveIcon.Text = icon;
             LiveRing.Stroke = ringBrush;
             LiveRing.Data = ring > 0 ? RingGeometry(22, 2.5, ring) : null;
-            Eyes.Visibility = MiniArt.Visibility = Visibility.Collapsed;
         }
+        _liveHasIcon = icon != null;
+        _liveLongText = text != null && text.Length > 18;   // keep the pill compact
+        UpdateEyesVisibility();
         if (text != null)
         {
             CompactTime.Text = text;
             CompactTime.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Fg");
         }
 
+        // the middle text is busy (a track, a call, the recording's length): the clock moves to the right side
+        bool clockAside = _settings.AlwaysShowTime && (text != null || _recording.IsRecording);
+        CompactClock.Visibility = clockAside ? Visibility.Visible : Visibility.Collapsed;
+        if (clockAside) CompactClock.Text = _demoClock ?? DateTime.Now.ToString("HH:mm");
+
         // right side: privacy dots + unread badge
         MicDot.Visibility = _privacy.Mic.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         CamDot.Visibility = _privacy.Camera.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         UnreadBadge.Visibility = _unread > 0 ? Visibility.Visible : Visibility.Collapsed;
         UnreadText.Text = _unread > 99 ? "99+" : _unread.ToString();
-        if (text != null && text.Length > 18) CompactWeather.Visibility = Visibility.Collapsed; // keep the pill compact
 
         if (_mode == Mode.Compact && !_hidden)
         {
@@ -172,6 +180,14 @@ public partial class MainWindow
             dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, id == current ? "Fg" : "Fg3");
             LiveDots.Children.Add(dot);
         }
+    }
+
+    /// <summary>"Artist — Title" for the folded pill, or null when the player gives neither.</summary>
+    private static string? TrackLabel(MediaSnapshot m)
+    {
+        string title = m.Title.Trim(), artist = m.Artist.Trim();
+        if (title.Length == 0 && artist.Length == 0) return null;
+        return Shorten(title.Length == 0 ? artist : artist.Length == 0 ? title : $"{artist} — {title}", 44);
     }
 
     private static string Shorten(string s, int max) => s.Length <= max ? s : s[..(max - 1)].TrimEnd() + "…";
@@ -235,29 +251,71 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Messages only on the island: Windows' own banners are off for the apps we mirror.</summary>
+    private bool IslandOnly => _settings.IslandOnlyNotifications && _settings.MirrorNotifications && _notifications.Available && !IsToolRun;
+
+    /// <summary>After a start and after any change in Settings: switch the banners off, or give them back.</summary>
+    private void ApplyIslandOnly()
+    {
+        if (IsToolRun) return;
+        if (!IslandOnly) { WindowsBanners.Restore(forget: true); return; }
+        // "messengers only": apps the island no longer shows get their banner back
+        if (!_settings.MirrorAllApps) WindowsBanners.Restore(forget: true, only: id => !NotificationMirror.IsMessenger(id));
+        WindowsBanners.HideKnown(NotificationMirror.IsMessenger);
+    }
+
     private async Task PollNotificationsAsync()
     {
         var messages = await _notifications.PollAsync(_settings.MirrorAllApps);
         foreach (var m in messages)
         {
-            _unread++;
+            if (IslandOnly) WindowsBanners.Hide(m.AppId);   // a new sender: its next message comes without the banner
+            // most desktop programs (Discord, Telegram…) hand Windows no logo with the notification: take the
+            // program's own icon then, the one in the Start menu
+            var logo = (ImageSource?)m.Logo ?? AppLogo(m);
+            AddToInbox(m, logo);   // stays on the Notifications tab until read
             if (FocusMode.IsOn) continue; // quiet, only the counter grows
-            Brush? badge = m.Logo != null ? new ImageBrush(m.Logo) { Stretch = Stretch.UniformToFill } : null;
+            Brush? badge = logo != null ? new ImageBrush(logo) { Stretch = Stretch.UniformToFill } : null;
             var msg = m;
             // the smart island holds messages while you type and shows them at the first pause
-            WhenNotTyping(() => ShowToast(msg.Logo != null ? "" : "", msg.Title, string.IsNullOrEmpty(msg.Body) ? msg.App : msg.Body,
-                () => FocusApp(msg.App), badge, ms: 5000));
+            WhenNotTyping(() => ShowToast(badge != null ? "" : "", msg.Title, string.IsNullOrEmpty(msg.Body) ? msg.App : msg.Body,
+                () => OpenFromInbox(msg.App, msg.AppId), badge, ms: Math.Clamp(_settings.ToastSeconds, 2, 30) * 1000));
         }
     }
 
-    private void ClearUnread() => _unread = 0;
+    /// <summary>The badge counts what waits on the Notifications tab (opening the island alone doesn't read it).</summary>
+    private void ClearUnread() => _unread = _inbox.Count;
 
-    private static void FocusApp(string app)
+    /// <summary>The icon of the program a message came from: by its Windows app id, else from the running program.</summary>
+    private static ImageSource? AppLogo(NotificationMirror.Message m)
+    {
+        if (m.AppId.Length > 0 && ShellIcons.Get(@"shell:AppsFolder\" + m.AppId, 64) is { } known) return known;
+        var token = m.App.Split(' ')[0];
+        if (token.Length < 3) return null;
+        foreach (var p in Process.GetProcesses())
+        {
+            try
+            {
+                if (p.MainWindowHandle != IntPtr.Zero && p.ProcessName.Contains(token, StringComparison.OrdinalIgnoreCase) &&
+                    p.MainModule?.FileName is { Length: > 0 } exe && ShellIcons.Get(exe, 64) is { } icon)
+                    return icon;
+            }
+            catch { /* a program we may not look into */ }
+            finally { p.Dispose(); }
+        }
+        return null;
+    }
+
+    /// <summary>Bring a program's window forward. False when it has none (closed, or only in the tray).</summary>
+    private static bool FocusApp(string app)
     {
         var token = app.Split(' ')[0];
+        if (token.Length == 0) return false;
         var p = Process.GetProcesses().FirstOrDefault(x =>
             x.MainWindowHandle != IntPtr.Zero && x.ProcessName.Contains(token, StringComparison.OrdinalIgnoreCase));
-        if (p != null) Native.SetForegroundWindow(p.MainWindowHandle);
+        if (p == null) return false;
+        Native.SetForegroundWindow(p.MainWindowHandle);
+        return true;
     }
 
     private void CheckCalendar()

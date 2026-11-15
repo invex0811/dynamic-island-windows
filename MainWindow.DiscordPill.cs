@@ -22,7 +22,9 @@ public partial class MainWindow
     private DateTime _callSince;
     private bool _callShown, _callWasOn;
 
-    private bool DiscordBeside => _settings.DiscordSidePill;
+    /// <summary>The call is shown on the island at all (as the side island or inside the pill).</summary>
+    private bool DiscordOnIsland => _settings.ShowDiscordCall;
+    private bool DiscordBeside => DiscordOnIsland && _settings.DiscordSidePill;
 
     /// <summary>Every 250 ms (from UpdateLive): show, update or hide the call island.</summary>
     private void UpdateDiscordPill()

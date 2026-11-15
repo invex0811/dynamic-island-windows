@@ -13,7 +13,7 @@ public partial class MainWindow
 
     private void OnGameModeChanged(bool game)
     {
-        if (game && !IsToolRun) _fps.Start();
+        if (game && !IsToolRun && _settings.GameShowFps) _fps.Start();
         else _fps.Stop();
         UpdateAuraVisibility();
     }
@@ -21,20 +21,26 @@ public partial class MainWindow
     /// <summary>The text of the game pill: FPS of the game in front (when we may read it) and the load.</summary>
     private int? _demoFps;
 
-    private string GameStatsText(SystemStats.Snapshot s)
+    private string? GameStatsText(SystemStats.Snapshot s)
     {
         if (_liveDemo && _demoFps is int df)
         {
             var r = Random.Shared;
             return $"{df + r.Next(-4, 4)} FPS · CPU {38 + r.Next(-4, 5)}% · GPU {88 + r.Next(-3, 4)}%";
         }
-        int? fps = null;
-        var fg = Native.GetForegroundWindow();
-        if (fg != IntPtr.Zero && Native.GetWindowThreadProcessId(fg, out var pid) != 0)
-            fps = _fps.Running ? _fps.FpsOf((int)pid) : FpsMeter.FromHelper((int)pid);
-        return fps is int f
-            ? $"{f} FPS · CPU {s.Cpu:0}% · GPU {s.Gpu:0}%"
-            : $"CPU {s.Cpu:0}% · GPU {s.Gpu:0}% · RAM {s.Ram:0}%";
+        // only what was ticked in Settings; nothing to show (or FPS alone and no reading yet) leaves the clock
+        var parts = new List<string>(4);
+        if (_settings.GameShowFps)
+        {
+            var fg = Native.GetForegroundWindow();
+            if (fg != IntPtr.Zero && Native.GetWindowThreadProcessId(fg, out var pid) != 0 &&
+                (_fps.Running ? _fps.FpsOf((int)pid) : FpsMeter.FromHelper((int)pid)) is int f)
+                parts.Add($"{f} FPS");
+        }
+        if (_settings.GameShowCpu) parts.Add($"CPU {s.Cpu:0}%");
+        if (_settings.GameShowGpu) parts.Add($"GPU {s.Gpu:0}%");
+        if (_settings.GameShowRam) parts.Add($"RAM {s.Ram:0}%");
+        return parts.Count > 0 ? string.Join(" · ", parts) : null;
     }
 
     // ------------------------------------------------------------------ settings: FPS access
@@ -42,19 +48,11 @@ public partial class MainWindow
     private void RefreshFpsAccess()
     {
         if (IsToolRun) return;
-        bool ok = _fps.Running || FpsMeter.HelperAlive() || ProbeFps();
+        bool ok = _fps.Running || FpsMeter.HelperAlive() || FpsMeter.CanMeasure();
         FpsStatus.Text = ok
             ? L.T("Счётчик FPS работает: в играх он появится в пилюле")
             : L.T("Чтобы видеть FPS в играх, нужно один раз разрешить доступ");
         FpsGrantButton.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    private static bool ProbeFps()
-    {
-        using var probe = new FpsMeter();
-        bool ok = probe.Start();
-        probe.Stop();
-        return ok;
     }
 
     private void FpsGrant_Click(object sender, RoutedEventArgs e)

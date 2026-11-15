@@ -325,7 +325,7 @@
               </Grid.RenderTransform>
               <Border x:Name="Sel" Background="{DynamicResource ChipBg}" CornerRadius="16" Opacity="0"/>
               <Border x:Name="Hover" Background="{DynamicResource Fg}" CornerRadius="16" Opacity="0"/>
-              <Border Background="Transparent" CornerRadius="16" Padding="10,7" MinWidth="34">
+              <Border Background="Transparent" CornerRadius="16" Padding="8,7" MinWidth="30">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                   <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"
                              FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center"/>

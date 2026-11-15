@@ -13,6 +13,12 @@ namespace DynamicIsland;
 /// </summary>
 public partial class MainWindow
 {
+    /// <summary>Started to render screenshots or a promo clip, not to be used: leave the system alone.</summary>
+    private static bool IsToolRun => Environment.GetCommandLineArgs()
+        .Any(a => a is "--snapshot" or "--promo" or "--review" or "--brand" or "--live-demo" or "--cover");
+
+    private static string AppVersion => System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "?";
+
     // ------------------------------------------------------------------ no power throttling
 
     [StructLayout(LayoutKind.Sequential)]
@@ -97,7 +103,7 @@ public partial class MainWindow
     private string PerfReport()
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Atoll {Updater.Current} · Windows {Environment.OSVersion.Version}");
+        sb.AppendLine($"Atoll {AppVersion} · Windows {Environment.OSVersion.Version}");
         sb.AppendLine("Smoothness: " + PerfSummary());
         sb.AppendLine($"Graphics: {string.Join(" + ", GraphicsCards())} · WPF tier {RenderCapability.Tier >> 16}");
         sb.AppendLine($"CPU threads: {Environment.ProcessorCount}");

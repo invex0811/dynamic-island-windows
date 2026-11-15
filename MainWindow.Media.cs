@@ -134,6 +134,7 @@ public partial class MainWindow
 
     private void SetEqualizer(bool on)
     {
+        on &= !_overFullscreen;   // a still picture over a game
         if (on == _eqRunning) return;
         _eqRunning = on;
         foreach (var bar in EqBars.Children.OfType<Rectangle>())
