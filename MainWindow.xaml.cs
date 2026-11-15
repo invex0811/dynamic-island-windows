@@ -803,7 +803,8 @@ public partial class MainWindow : Window
         // leaning to the cursor) keeps this loop alive, for as long as the music plays. Every step redraws
         // the whole see-through window, and this runs at the monitor's rate — 240 times a second on a
         // 240 Hz screen, most of a CPU core. 60 is plenty for a slow swell.
-        if (AmbientOnly && _lastFrame != TimeSpan.Zero && (now - _lastFrame).TotalMilliseconds < 15.5) return;
+        // The reach for the cursor is followed by the eye, so it gets up to ~120 frames while the cursor moves.
+        if (AmbientOnly && _lastFrame != TimeSpan.Zero && (now - _lastFrame).TotalMilliseconds < (ReachMoving ? 6.5 : 15.5)) return;
         double dt = _lastFrame == TimeSpan.Zero ? 1 / 60.0 : Math.Min(0.05, (now - _lastFrame).TotalSeconds);
         _lastFrame = now;
 

@@ -66,7 +66,14 @@ public partial class MainWindow
     private Color? _albumColor;
 
     private readonly Spring _lean = new(0) { Stiffness = 190, Damping = 16 };
-    private Point _reachCursor;
+    private Point _reachCursor;      // where the bulge points, in island coordinates (eased every frame)
+    private Point _reachGoal;        // where the cursor really is
+    private Point _reachOrigin;      // the island's top-left corner on screen, in pixels
+    private long _reachMovedTick;    // when the cursor last moved near the island
+
+    /// <summary>The cursor is moving near the island (or the body is still settling): the reach wants smooth frames.</summary>
+    private bool ReachMoving => !_reach.IsSettled || !_lean.IsSettled ||
+                                (_reach.Target > 0 && Environment.TickCount64 - _reachMovedTick < 150);
 
     /// <summary>
     /// The pill feels the cursor: from below the lower edge swells towards it like a drop about to fall,
@@ -75,6 +82,7 @@ public partial class MainWindow
     private void UpdateReach(Native.POINT cursor)
     {
         double bump = 0, lean = 0;
+        bool moved = false;
         if (_settings.Reactive && _mode == Mode.Compact && !_dragging && !_hidden && !_overFullscreen && Island.IsVisible)
         {
             Point tl;
@@ -92,14 +100,20 @@ public partial class MainWindow
                 k = k * k * (3 - 2 * k);                     // smoothstep: soft start, firm end
                 bump = k;                                    // 0…1: how hard the body flows to the cursor
                 if (dx != 0) lean = Math.Sign(dx) * 4 * k;
-                // where the cursor is, in island coordinates (smoothed so the wave glides)
-                _reachCursor = new Point(_reachCursor.X + (x - _reachCursor.X) * 0.35, _reachCursor.Y + (y - _reachCursor.Y) * 0.35);
+                // where the cursor is, in island coordinates. The bulge itself is eased towards it every frame
+                // (StepLiquid): easing it here, 30 times a second, made the wave move in visible steps.
+                moved = Math.Abs(x - _reachGoal.X) > 0.5 || Math.Abs(y - _reachGoal.Y) > 0.5;
+                if (moved) _reachMovedTick = Environment.TickCount64;
+                _reachGoal = new Point(x, y);
+                _reachOrigin = tl;
+                // a new approach starts at the cursor, not where the last one ended
+                if (_reach.Value < 0.02 && _reach.Target < 0.02) _reachCursor = _reachGoal;
             }
         }
         bool changed = Math.Abs(_reach.Target - bump) > 0.05 || Math.Abs(_lean.Target - lean) > 0.05;
         _reach.Target = bump;
         _lean.Target = lean;
-        if (changed) StartRendering();
+        if (changed || moved) StartRendering();
     }
 
     /// <summary>For a split second the island splits into red / green / blue, like a misaligned print.</summary>
@@ -293,12 +307,29 @@ public partial class MainWindow
         _ripplePhase += dt * 7.5;
         _dripPhase += dt * (2.2 + _audioLevel * 5);
 
+        // the bulge follows the cursor every frame: read it now, ease towards it by the time that really passed
+        if (_reach.Target > 0)
+        {
+            Native.GetCursorPos(out var cp);
+            if (_fakeCursor is Native.POINT fake) cp = fake;
+            double scale = Dpi;
+            double gx = (cp.X - _reachOrigin.X) / scale, gy = (cp.Y - _reachOrigin.Y) / scale;
+            if (Math.Abs(gx - _reachGoal.X) > 0.5 || Math.Abs(gy - _reachGoal.Y) > 0.5) _reachMovedTick = Environment.TickCount64;
+            _reachGoal = new Point(gx, gy);
+        }
+        double ease = 1 - Math.Exp(-dt * 14);
+        _reachCursor = new Point(_reachCursor.X + (_reachGoal.X - _reachCursor.X) * ease, _reachCursor.Y + (_reachGoal.Y - _reachCursor.Y) * ease);
+        bool chasing = Math.Abs(_reachCursor.X - _reachGoal.X) > 0.3 || Math.Abs(_reachCursor.Y - _reachGoal.Y) > 0.3;
         _reach.Step(dt);
         _lean.Step(dt);
+        // the glow along the lower edge is a strip of light, not a shape: where the body swells out it would
+        // show as a bright blob, so it dims while the island reaches
+        double dim = 1 - Math.Clamp(_reach.Value, 0, 1) * 0.9;
+        if (Math.Abs(AuraDim.Opacity - dim) > 0.01) AuraDim.Opacity = dim;
         IslandShift.X = _lean.Value;
         bool shapeMoving = Liquid && (_ripple > 0 || playing || _audioLevel > 0);
         bool reactive = _settings.Reactive && !Lite && _mode == Mode.Compact &&
-                        (playing || _audioLevel > 0 || !_reach.IsSettled || _reach.Value > 0.01 || !_lean.IsSettled);
+                        (playing || _audioLevel > 0 || !_reach.IsSettled || !_lean.IsSettled || (_reach.Value > 0.01 && chasing));
         UpdateShape(shapeMoving);
 
         return shapeMoving || reactive || _posActive || !(_sx.IsSettled && _sy.IsSettled && _skew.IsSettled);

@@ -124,6 +124,22 @@ public sealed class SeasonView : FrameworkElement
     private static SolidColorBrush B(byte a, byte r, byte g, byte b2) { var x = new SolidColorBrush(Color.FromArgb(a, r, g, b2)); x.Freeze(); return x; }
     private static Pen P(Brush b, double t) { var p = new Pen(b, t) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }; p.Freeze(); return p; }
 
+    /// <summary>
+    /// The island's outline can swell outside its box (it reaches for the cursor); the scene is clipped to that
+    /// outline. Everything that fills the box — light, frost, the meadow, the sea — is therefore painted this much
+    /// wider, or the swollen part shows the bare island with the scene cut off inside it.
+    /// </summary>
+    private const double Bleed = 30;
+    private static Rect Wide(double w, double h) => new(-Bleed, -Bleed, w + 2 * Bleed, h + 2 * Bleed);
+
+    /// <summary>A radial light placed by fractions of the box, but painted in real coordinates so it doesn't move when the painted area grows.</summary>
+    private static RadialGradientBrush Light(Color from, Color to, double w, double h, double cx, double cy, double rx, double ry) =>
+        new(from, to)
+        {
+            MappingMode = BrushMappingMode.Absolute,
+            Center = new Point(cx * w, cy * h), GradientOrigin = new Point(cx * w, cy * h), RadiusX = rx * w, RadiusY = ry * h,
+        };
+
     protected override void OnRender(DrawingContext dc)
     {
         double w = ActualWidth, h = ActualHeight;
@@ -152,7 +168,8 @@ public sealed class SeasonView : FrameworkElement
     {
         // a soft green glow along the bottom: the meadow
         var meadow = new LinearGradientBrush(Color.FromArgb(0, 0x40, 0xA0, 0x50), Color.FromArgb(0x55, 0x40, 0xA0, 0x50), 90);
-        dc.DrawRectangle(meadow, null, new Rect(0, h * (Compact ? 0.55 : 0.78), w, h * (Compact ? 0.45 : 0.22)));
+        dc.DrawRectangle(meadow, null, new Rect(-Bleed, h * (Compact ? 0.55 : 0.78), w + 2 * Bleed, h * (Compact ? 0.45 : 0.22)));
+        dc.DrawRectangle(B(0x55, 0x40, 0xA0, 0x50), null, new Rect(-Bleed, h, w + 2 * Bleed, Bleed));   // and on under the box
 
         if (!Compact)
         {
@@ -216,14 +233,15 @@ public sealed class SeasonView : FrameworkElement
             var g = new StreamGeometry();
             using (var c = g.Open())
             {
-                c.BeginFigure(new Point(0, h + 2), true, true);
-                for (double x = 0; x <= w + 6; x += 6)
+                c.BeginFigure(new Point(-Bleed, h + Bleed), true, true);
+                for (double x = -Bleed; x <= w + Bleed + 6; x += 6)
                     c.LineTo(new Point(x, y0 + Math.Sin(x * 0.045 + _t * (1.6 + layer * 0.7) + layer * 2) * amp), true, true);
-                c.LineTo(new Point(w + 6, h + 2), true, true);
+                c.LineTo(new Point(w + Bleed + 6, h + Bleed), true, true);
             }
             g.Freeze();
             var sea = new LinearGradientBrush(layer == 0 ? Color.FromArgb(0xE0, 0x2E, 0xA8, 0xD8) : Color.FromArgb(0xF0, 0x16, 0x7F, 0xB8),
-                                              Color.FromArgb(0xF0, 0x0B, 0x4F, 0x86), 90);
+                                              Color.FromArgb(0xF0, 0x0B, 0x4F, 0x86), 90)
+            { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, y0 - amp), EndPoint = new Point(0, h + 2) };
             dc.DrawGeometry(sea, null, g);
             // foam on the crest
             if (!Compact && layer == 1)
@@ -250,7 +268,7 @@ public sealed class SeasonView : FrameworkElement
         }
         else
         {
-            dc.DrawRectangle(Sand, null, new Rect(w * 0.7, sandTop, w * 0.3, h - sandTop + 1));
+            dc.DrawRectangle(Sand, null, new Rect(w * 0.7, sandTop, w * 0.3 + Bleed, h - sandTop + Bleed));
         }
     }
 
@@ -348,9 +366,8 @@ public sealed class SeasonView : FrameworkElement
     private void DrawAutumn(DrawingContext dc, double w, double h)
     {
         // cosy: warm light rising from the bottom
-        var warm = new RadialGradientBrush(Color.FromArgb(0x55, 0xFF, 0x8A, 0x3D), Color.FromArgb(0, 0xFF, 0x8A, 0x3D))
-        { Center = new Point(0.5, 1.1), GradientOrigin = new Point(0.5, 1.1), RadiusX = 0.7, RadiusY = Compact ? 1.2 : 0.55 };
-        dc.DrawRectangle(warm, null, new Rect(0, 0, w, h));
+        var warm = Light(Color.FromArgb(0x55, 0xFF, 0x8A, 0x3D), Color.FromArgb(0, 0xFF, 0x8A, 0x3D), w, h, 0.5, 1.1, 0.7, Compact ? 1.2 : 0.55);
+        dc.DrawRectangle(warm, null, Wide(w, h));
         if (!Compact)
         {
             // a cup of tea in the corner, steaming
@@ -394,16 +411,16 @@ public sealed class SeasonView : FrameworkElement
     {
         // the candle's light flickers on the glass
         double flicker = 0.8 + 0.12 * Math.Sin(_t * 9.1) + 0.08 * Math.Sin(_t * 23.7 + 1);
-        var light = new RadialGradientBrush(Color.FromArgb((byte)(0x80 * flicker), 0xFF, 0xA8, 0x4A), Color.FromArgb(0, 0xFF, 0xA8, 0x4A))
-        { Center = new Point(0.08, 1.05), GradientOrigin = new Point(0.08, 1.05), RadiusX = Compact ? 0.35 : 0.45, RadiusY = Compact ? 1.6 : 0.9 };
-        dc.DrawRectangle(light, null, new Rect(0, 0, w, h));
+        var light = Light(Color.FromArgb((byte)(0x80 * flicker), 0xFF, 0xA8, 0x4A), Color.FromArgb(0, 0xFF, 0xA8, 0x4A),
+                          w, h, 0.08, 1.05, Compact ? 0.35 : 0.45, Compact ? 1.6 : 0.9);
+        dc.DrawRectangle(light, null, Wide(w, h));
 
         // frost creeping in from the corners
         foreach (var (fx, fy) in new[] { (0.0, 0.0), (1.0, 0.0), (1.0, 1.0) })
         {
-            var frost = new RadialGradientBrush(Color.FromArgb(0x3A, 0xE8, 0xF4, 0xFF), Color.FromArgb(0, 0xE8, 0xF4, 0xFF))
-            { Center = new Point(fx, fy), GradientOrigin = new Point(fx, fy), RadiusX = Compact ? 0.15 : 0.22, RadiusY = Compact ? 0.9 : 0.4 };
-            dc.DrawRectangle(frost, null, new Rect(0, 0, w, h));
+            var frost = Light(Color.FromArgb(0x3A, 0xE8, 0xF4, 0xFF), Color.FromArgb(0, 0xE8, 0xF4, 0xFF),
+                              w, h, fx, fy, Compact ? 0.15 : 0.22, Compact ? 0.9 : 0.4);
+            dc.DrawRectangle(frost, null, Wide(w, h));
         }
 
         // snow outside
