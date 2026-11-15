@@ -1117,29 +1117,9 @@
                 </Border>
                 <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
                   <StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="ОСТРОВ" Margin="0,0,0,6"/>
                     <CheckBox x:Name="HoverSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Раскрывать при наведении"/>
-                    <CheckBox x:Name="SmartSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Умный остров"/>
-                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,6"
-                               Text="Открывается на том, что важно сейчас (таймер, звонок, скопированное, музыка) или на вкладке, которую вы обычно открываете в это время. Пока вы печатаете, не раскрывается от курсора, а сообщения ждут паузы. При низком заряде ноутбука включает облегчённую графику. Привычки хранятся только на этом ПК."/>
-                    <Button Style="{StaticResource GhostPill}" HorizontalAlignment="Left" Padding="12,6" Margin="0,0,0,10"
-                            Content="Забыть привычки" Click="ResetHabits_Click"/>
-                    <TextBlock Text="Прятать остров поверх программ" FontSize="13" Margin="0,6,0,6"/>
-                    <WrapPanel x:Name="HideAppChips"/>
-                    <TextBlock x:Name="HideAppsEmpty" Style="{StaticResource Muted}" Text="Например, игры без полного экрана или программы для созвонов" TextWrapping="Wrap" Margin="0,0,0,6"/>
-                    <DockPanel Margin="0,0,0,10">
-                      <Button DockPanel.Dock="Right" Style="{StaticResource GhostPill}" Padding="12,6" Margin="8,0,0,0" Content="Добавить" Click="HideAppAdd_Click"/>
-                      <ComboBox x:Name="HideAppPicker" Style="{StaticResource SoftCombo}"/>
-                    </DockPanel>
-                    <CheckBox x:Name="LockSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Закрепить на месте (не перетаскивать)"/>
-                    <CheckBox x:Name="CapsSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать Caps Lock"/>
-                    <CheckBox x:Name="LayoutSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать смену раскладки"/>
-                    <CheckBox x:Name="DiscordSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать звонок Discord на острове"/>
-                    <CheckBox x:Name="DiscordSideSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Звонок Discord — отдельным островком справа"/>
-                    <CheckBox x:Name="CaptureSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Скрывать остров на скриншотах и демонстрации экрана"/>
-                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8"
-                               Text="Если выключить, остров будет виден на скриншотах, записи и в Zoom/Discord, но эффект стекла станет сплошным. Пока работает запись NVIDIA, остров сам остаётся видимым — иначе она не пишет рабочий стол"/>
-                    <CheckBox x:Name="FullscreenSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Прятать в играх и полноэкранном режиме"/>
-                    <DockPanel Margin="0,0,0,10">
+                    <DockPanel Margin="0,4,0,8">
                       <ComboBox x:Name="OpenHotkeyBox" DockPanel.Dock="Right" Style="{StaticResource SoftCombo}" Width="200"
                                 SelectionChanged="OpenHotkey_Changed"/>
                       <StackPanel VerticalAlignment="Center">
@@ -1147,10 +1127,55 @@
                         <TextBlock x:Name="OpenHotkeyStatus" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"/>
                       </StackPanel>
                     </DockPanel>
-                    <CheckBox x:Name="LiteSwitch" Style="{StaticResource Switch}" Click="Lite_Click" ToolTip="Без стекла, свечения и эффектов: заметно меньше нагрузка" Content="Облегчённая графика для слабых ПК"/>
-                    <Button Style="{StaticResource GhostPill}" HorizontalAlignment="Left" Padding="12,6" Margin="0,0,0,10"
-                            Content="Скопировать отчёт о плавности" Click="CopyPerfReport_Click"
-                            ToolTip="Если остров дёргается — отправьте этот отчёт разработчику"/>
+                    <CheckBox x:Name="SmartSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Умный остров"/>
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,6"
+                               Text="Открывается на том, что важно сейчас (таймер, звонок, скопированное, музыка) или на вкладке, которую вы обычно открываете в это время. Пока вы печатаете, не раскрывается от курсора, а сообщения ждут паузы. При низком заряде ноутбука включает облегчённую графику. Привычки хранятся только на этом ПК."/>
+                    <Button Style="{StaticResource GhostPill}" HorizontalAlignment="Left" Padding="12,6" Margin="0,0,0,6"
+                            Content="Забыть привычки" Click="ResetHabits_Click"/>
+                    <CheckBox x:Name="LockSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Закрепить на месте (не перетаскивать)"/>
+                    <Button Style="{StaticResource AccentPill}" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="14,7"
+                            Click="ResetPosition_Click" ToolTip="Поставить остров ровно по центру вверху экрана">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8E3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Выровнять по центру" VerticalAlignment="Center"/>
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="В СВЁРНУТОМ ОСТРОВЕ" Margin="0,0,0,6"/>
+                    <CheckBox x:Name="AlwaysTimeSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Всегда показывать время"/>
+                    <CheckBox x:Name="TrackTitleSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Название песни и исполнитель в острове"/>
+                    <CheckBox x:Name="KaraokeSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Слова песни прямо в острове (караоке)"/>
+                    <CheckBox x:Name="DiscordSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать звонок Discord на острове"/>
+                    <CheckBox x:Name="DiscordSideSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Звонок Discord — отдельным островком справа"/>
+                    <CheckBox x:Name="CapsSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать Caps Lock"/>
+                    <CheckBox x:Name="LayoutSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Показывать смену раскладки"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="УВЕДОМЛЕНИЯ" Margin="0,0,0,6"/>
+                    <CheckBox x:Name="NotifySwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Сообщения Telegram, Discord, Viber… на острове"/>
+                    <CheckBox x:Name="NotifyAllSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Уведомления всех приложений, не только мессенджеров"/>
+                    <CheckBox x:Name="IslandOnlySwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Только на острове: без всплывающих уведомлений Windows"/>
+                    <TextBlock x:Name="IslandOnlyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8"
+                               Text="Баннеры Windows выключаются только у программ, чьи сообщения показывает остров, и возвращаются, когда Atoll закрыт. Сообщения остаются в центре уведомлений"/>
+                    <DockPanel x:Name="ToastSecondsRow" Margin="0,0,0,8">
+                      <TextBlock DockPanel.Dock="Left" Text="Сколько висит уведомление" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="12.5"/>
+                      <TextBlock x:Name="ToastSecondsValue" DockPanel.Dock="Right" Style="{StaticResource Muted}" VerticalAlignment="Center" MinWidth="40"
+                                 TextAlignment="Right" Margin="10,0,0,0"/>
+                      <Slider x:Name="ToastSecondsSlider" Style="{StaticResource SoftSlider}" Minimum="2" Maximum="30" TickFrequency="1"
+                              IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="ToastSeconds_ValueChanged"/>
+                    </DockPanel>
+                    <TextBlock x:Name="NotifyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8" Visibility="Collapsed"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="ИГРЫ И ПОЛНЫЙ ЭКРАН" Margin="0,0,0,6"/>
+                    <CheckBox x:Name="FullscreenSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Прятать в играх и полноэкранном режиме"/>
                     <CheckBox x:Name="GameStatsSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="В играх показывать FPS и нагрузку вместо полного скрытия"/>
                     <StackPanel x:Name="GameStatsOptions" Margin="18,0,0,4">
                       <CheckBox x:Name="GameFpsSwitch" Style="{StaticResource Switch}" Margin="0,2" Click="Behavior_Click" Content="FPS"/>
@@ -1167,32 +1192,33 @@
                                    Text="Поверх игр в «эксклюзивном полноэкранном» режиме ничего показать нельзя — выберите «Оконный без рамки»."/>
                       </StackPanel>
                     </DockPanel>
-                    <CheckBox x:Name="AlwaysTimeSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Всегда показывать время"/>
-                    <CheckBox x:Name="TrackTitleSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Название песни и исполнитель в острове"/>
-                    <CheckBox x:Name="KaraokeSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Слова песни прямо в острове (караоке)"/>
-                    <CheckBox x:Name="NotifySwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Сообщения Telegram, Discord, Viber… на острове"/>
-                    <CheckBox x:Name="NotifyAllSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Уведомления всех приложений, не только мессенджеров"/>
-                    <CheckBox x:Name="IslandOnlySwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Только на острове: без всплывающих уведомлений Windows"/>
-                    <TextBlock x:Name="IslandOnlyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8"
-                               Text="Баннеры Windows выключаются только у программ, чьи сообщения показывает остров, и возвращаются, когда Atoll закрыт. Сообщения остаются в центре уведомлений"/>
-                    <DockPanel x:Name="ToastSecondsRow" Margin="0,0,0,8">
-                      <TextBlock DockPanel.Dock="Left" Text="Сколько висит уведомление" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="12.5"/>
-                      <TextBlock x:Name="ToastSecondsValue" DockPanel.Dock="Right" Style="{StaticResource Muted}" VerticalAlignment="Center" MinWidth="40"
-                                 TextAlignment="Right" Margin="10,0,0,0"/>
-                      <Slider x:Name="ToastSecondsSlider" Style="{StaticResource SoftSlider}" Minimum="2" Maximum="30" TickFrequency="1"
-                              IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="ToastSeconds_ValueChanged"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="КОГДА ПРЯТАТЬ ОСТРОВ" Margin="0,0,0,6"/>
+                    <TextBlock Text="Прятать остров поверх программ" FontSize="13" Margin="0,2,0,6"/>
+                    <WrapPanel x:Name="HideAppChips"/>
+                    <TextBlock x:Name="HideAppsEmpty" Style="{StaticResource Muted}" Text="Например, игры без полного экрана или программы для созвонов" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                    <DockPanel Margin="0,0,0,10">
+                      <Button DockPanel.Dock="Right" Style="{StaticResource GhostPill}" Padding="12,6" Margin="8,0,0,0" Content="Добавить" Click="HideAppAdd_Click"/>
+                      <ComboBox x:Name="HideAppPicker" Style="{StaticResource SoftCombo}"/>
                     </DockPanel>
-                    <TextBlock x:Name="NotifyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8" Visibility="Collapsed"/>
+                    <CheckBox x:Name="CaptureSwitch" Style="{StaticResource Switch}" Click="Behavior_Click" Content="Скрывать остров на скриншотах и демонстрации экрана"/>
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8"
+                               Text="Если выключить, остров будет виден на скриншотах, записи и в Zoom/Discord, но эффект стекла станет сплошным. Пока работает запись NVIDIA, остров сам остаётся видимым — иначе она не пишет рабочий стол"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Tile}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" Text="СИСТЕМА" Margin="0,0,0,6"/>
                     <CheckBox x:Name="AutostartSwitch" Style="{StaticResource Switch}" Click="Autostart_Click" Content="Запускать вместе с Windows"/>
                     <CheckBox x:Name="CleanDesktopSwitch" Style="{StaticResource Switch}" Click="CleanDesktopSwitch_Click"
                               Content="Чистый рабочий стол: прятать значки"/>
-                    <Button Style="{StaticResource AccentPill}" HorizontalAlignment="Left" Margin="0,12,0,0" Padding="14,7"
-                            Click="ResetPosition_Click" ToolTip="Поставить остров ровно по центру вверху экрана">
-                      <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE8E3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="Выровнять по центру" VerticalAlignment="Center"/>
-                      </StackPanel>
-                    </Button>
+                    <CheckBox x:Name="LiteSwitch" Style="{StaticResource Switch}" Click="Lite_Click" ToolTip="Без стекла, свечения и эффектов: заметно меньше нагрузка" Content="Облегчённая графика для слабых ПК"/>
+                    <Button Style="{StaticResource GhostPill}" HorizontalAlignment="Left" Padding="12,6" Margin="0,2,0,4"
+                            Content="Скопировать отчёт о плавности" Click="CopyPerfReport_Click"
+                            ToolTip="Если остров дёргается — отправьте этот отчёт разработчику"/>
                     <Button x:Name="UninstallButton" Style="{StaticResource DangerPill}" HorizontalAlignment="Left" Margin="0,10,0,0" Padding="14,7"
                             Click="Uninstall_Click" ToolTip="Удалить приложение, автозапуск и хуки Claude Code">
                       <StackPanel Orientation="Horizontal">
