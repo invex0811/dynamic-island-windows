@@ -2,6 +2,15 @@
 
 All notable changes to Atoll (formerly "Dynamic Island for Windows"). Русская версия каждого пункта — ниже английской.
 
+## 1.7.1 — 2026-11-15
+
+- **Liquid glass theme** (Settings → Appearance → Themes, first in the list): the island is clear frosted glass over what's really behind it, and near its edge the glass works like a lens — the picture under it curls over the rounded rim, with a thin colour fringe (red bends a little more than blue) and a light rim on top. Glass tiles inside. Choosing the theme turns frosted glass on.
+- **No grey flash when the island opens** with frosted glass: the backdrop for the open size is taken before the island moves (when the cursor reaches it), so the glass stays see-through from the first frame instead of turning solid for a moment.
+
+### По-русски
+- Тема «Жидкое стекло»: прозрачное матовое стекло над тем, что за островом, у краёв подворачивает картинку как линза, с тонкой радужной каймой.
+- При открытии острова со стеклом больше нет серой вспышки.
+
 ## 1.7.0 — 2026-11-14
 
 ### Seasons

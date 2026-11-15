@@ -11,7 +11,7 @@ namespace DynamicIsland.Views;
 /// </summary>
 public sealed class SeasonView : FrameworkElement
 {
-    public static readonly string[] Kinds = ["spring", "summer", "autumn", "winter"];
+    public static readonly string[] Kinds = ["liquid", "spring", "summer", "autumn", "winter"];
 
     private string _kind = "";
     public string Kind
@@ -151,6 +151,7 @@ public sealed class SeasonView : FrameworkElement
             case "summer": DrawSummer(dc, w, h); break;
             case "autumn": DrawAutumn(dc, w, h); break;
             case "winter": DrawWinter(dc, w, h); break;
+            case "liquid": DrawLiquid(dc, w, h); break;
         }
     }
 
@@ -459,5 +460,45 @@ public sealed class SeasonView : FrameworkElement
             var flameY = h - 6;
             dc.DrawEllipse(FlameOuter, null, new Point(12, flameY), 1.6, 2.8 + Math.Sin(_t * 11) * 0.3);
         }
+    }
+
+    // ---- liquid glass: colours drifting and blending under the glass, an iridescent rim, a specular sheen
+
+    /// <summary>HSV (hue in degrees) to a colour with this alpha.</summary>
+    private static Color Hsv(double hue, double sat, double val, byte alpha)
+    {
+        hue = ((hue % 360) + 360) % 360;
+        double c = val * sat, x = c * (1 - Math.Abs(hue / 60 % 2 - 1)), m = val - c;
+        (double r, double g, double b) = hue switch
+        {
+            < 60 => (c, x, 0.0), < 120 => (x, c, 0.0), < 180 => (0.0, c, x),
+            < 240 => (0.0, x, c), < 300 => (x, 0.0, c), _ => (c, 0.0, x),
+        };
+        return Color.FromArgb(alpha, (byte)((r + m) * 255), (byte)((g + m) * 255), (byte)((b + m) * 255));
+    }
+
+    // the palette the blobs wander through: pink, magenta, violet, blue, cyan (no greens or browns: blends stay clean)
+    private static readonly double[] LiquidHues = [335, 300, 265, 225, 192];
+
+    private void DrawLiquid(DrawingContext dc, double w, double h)
+    {
+        // the glass itself (the bending and the colour fringe) is done on the backdrop picture, see MainWindow.LiquidGlass;
+        // here only the light on it: a bright highlight along the top rim fading down the sides, a faint one at the bottom
+        double radius = Math.Min(h / 2, 28);
+        var top = new LinearGradientBrush
+        {
+            StartPoint = new Point(0.5, 0), EndPoint = new Point(0.5, 1),
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF), 0),
+                new GradientStop(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF), Compact ? 0.5 : 0.22),
+                new GradientStop(Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), Compact ? 0.75 : 0.5),
+                new GradientStop(Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF), 1),
+            },
+        };
+        dc.DrawRoundedRectangle(null, new Pen(top, 1.2), new Rect(0.8, 0.8, w - 1.6, h - 1.6), radius - 0.8, radius - 0.8);
+        // a soft sheen on the upper part of the glass
+        var sheen = new LinearGradientBrush(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF), Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 90);
+        dc.DrawRoundedRectangle(sheen, null, new Rect(0, 0, w, Math.Min(h, Compact ? h : 60)), radius, radius);
     }
 }

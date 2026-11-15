@@ -368,6 +368,44 @@ public partial class MainWindow : Window
                     Application.Current.Shutdown();
                     return;
                 }
+                if (action == "liquidtest")   // pictures of liquid glass over a made-up backdrop (stripes and a grid), never the real screen
+                {
+                    Settings.ReadOnly = true;
+                    var dir = args.ElementAtOrDefault(r + 2) ?? System.IO.Path.GetTempPath();
+                    Island.IsHitTestVisible = false; _settings.ExpandOnHover = false;
+                    _frostTestBackdrop = (w, h) =>
+                    {
+                        var px = new byte[w * h * 4];
+                        Color[] bars = [Color.FromRgb(0xFF, 0x5A, 0x5F), Color.FromRgb(0xFF, 0xB3, 0x40), Color.FromRgb(0x4C, 0xD9, 0x64), Color.FromRgb(0x2E, 0x9B, 0xFF), Color.FromRgb(0xAF, 0x52, 0xDE)];
+                        for (int y = 0; y < h; y++)
+                            for (int x = 0; x < w; x++)
+                            {
+                                var c = bars[(x / 22) % bars.Length];
+                                bool grid = x % 22 < 2 || y % 14 < 2;
+                                int i = (y * w + x) * 4;
+                                px[i] = grid ? (byte)255 : c.B; px[i + 1] = grid ? (byte)255 : c.G; px[i + 2] = grid ? (byte)255 : c.R;
+                            }
+                        return px;
+                    };
+                    var preset = BuiltInThemes.First(t => t.Id == "liquid");
+                    ApplyThemePreset(preset);
+                    _settings.CaptureHidden = true; ApplyCaptureExclusion();
+                    await Task.Delay(3000);
+                    void Shot(string name)
+                    {
+                        var rtb = new RenderTargetBitmap((int)Root.ActualWidth, (int)Root.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                        rtb.Render(Root);
+                        CaptureService.SavePng(rtb, System.IO.Path.Combine(dir, name + ".png"));
+                    }
+                    SetMode(Mode.Compact); await Task.Delay(2500); _frostSkips = 7; CaptureFrost(); await Task.Delay(300); Shot("liquid-compact");
+                    TabMusic.IsChecked = true; _pinnedOpen = true; Expand(); await Task.Delay(2500); CaptureFrost(); await Task.Delay(300); Shot("liquid-open");
+                    if (_liquidPixels != null && _frostBmp != null)
+                        CaptureService.SavePng(BitmapSource.Create(_frostBmp.PixelWidth, _frostBmp.PixelHeight, 96, 96, PixelFormats.Bgr32, null, _liquidPixels, _frostBmp.PixelWidth * 4),
+                                               System.IO.Path.Combine(dir, "liquid-bent-backdrop.png"));
+                    Log.Write($"liquidtest: liquid={LiquidGlass} frost covers={_frostCovers} blur={(Frost.Effect as System.Windows.Media.Effects.BlurEffect)?.Radius}");
+                    Application.Current.Shutdown();
+                    return;
+                }
                 if (action == "seasons")   // pictures of the four season themes, folded and open (with --cover)
                 {
                     var dir = args.ElementAtOrDefault(r + 2) ?? System.IO.Path.GetTempPath();
@@ -880,8 +918,8 @@ public partial class MainWindow : Window
     private void GrowWindowFor(Size size)
     {
         _windowFitted = false;
-        // the frosted picture no longer fits the new size: solid until it is retaken
-        if (Math.Abs(size.Width - _w.Target) > 1 || Math.Abs(size.Height - _h.Target) > 1) SetFrostCovers(false);
+        // the frosted picture must cover the new size: take it now for that size (solid only if that fails)
+        if ((Math.Abs(size.Width - _w.Target) > 1 || Math.Abs(size.Height - _h.Target) > 1) && !PrecaptureFrost(size)) SetFrostCovers(false);
         _shrinkTimer.Stop();
         double need = Math.Ceiling(IslandTopMargin + Math.Max(size.Height, Island.ActualHeight) * UiScale + PillRoom);
         if (PerfNoResize || need > Height) GrowWindow(need);
@@ -1065,6 +1103,7 @@ public partial class MainWindow : Window
         _collapseDelay.Stop();
         _shrinkTimer.Stop();
         GrowWindow();   // room to open, before anything moves (resizing mid-animation would stutter)
+        if (_mode == Mode.Compact && !_dragging) PrecaptureFrost(TargetSize(Mode.Expanded));   // and the glass's picture for the open size
         if (_mode == Mode.Compact && !_dragging)
         {
             Squish(1.05); // swells a little under the cursor

@@ -18,6 +18,8 @@ public partial class MainWindow
 
     private static readonly ThemePreset[] BuiltInThemes =
     [
+        // liquid glass: clear frosted glass that bends what's behind it at the edges (like iOS)
+        new("liquid", "Жидкое стекло", true, "#0B0B14", "#B9A4FF", "none", "liquid"),
         // the seasons: animated scenes inside the island
         new("spring", "Весна", true, "#1B2A22", "#FF7EB6", "none", "spring"),
         new("summer", "Лето", true, "#0D2638", "#FFC94D", "none", "summer"),
@@ -97,6 +99,7 @@ public partial class MainWindow
         _settings.AccentColor = t.Accent;
         _settings.Aura = t.Aura;
         _settings.Scene = t.Scene;
+        if (t.Scene == "liquid") _settings.Glass = true;   // liquid glass is glass: it needs the frosted backdrop
         _settings.Save();
         ApplyScene();
         ApplyTheme();

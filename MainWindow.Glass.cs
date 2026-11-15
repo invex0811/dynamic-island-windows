@@ -80,6 +80,7 @@ public partial class MainWindow
         // see-through only over a picture: the frost (when it covers the island) or your photo
         bool overPicture = photo || (_settings.Glass && !Lite && _frostCovers);
         double tint = overPicture && !photo ? Math.Clamp(_settings.GlassTint, 20, 100) / 100.0 : 1;
+        if (overPicture && !photo && LiquidGlass) tint = Math.Min(tint, 0.58);
         // the folded pill stays readable: never thinner than 80 %
         double body = expanded ? tint : Math.Max(tint, 0.8);
         // your photo shows through a lighter tint (still dark enough for white text)
@@ -137,6 +138,9 @@ public partial class MainWindow
     }
 
     /// <summary>Snapshot of the screen behind the island (our own window isn't in it), blurred by the Image's effect.</summary>
+    /// <summary>Test: a made-up backdrop instead of the real screen (see --run liquidtest).</summary>
+    private Func<int, int, byte[]>? _frostTestBackdrop;
+
     private void CaptureFrost()
     {
         if (!_settings.Glass || Lite || _excluded != true || _hidden || _fullscreenHidden || !IsLoaded || !Island.IsVisible) { if (Lite || _excluded != true) FrostHost.Opacity = 0; SetFrostCovers(false); return; }
@@ -145,18 +149,39 @@ public partial class MainWindow
         if (_rendering && !(_w.IsSettled && _h.IsSettled)) return;
         // the folded pill is nearly opaque: refreshing what's behind it every few seconds is plenty
         if (_mode == Mode.Compact && ++_frostSkips % 8 != 0 && _frostBmp != null) return;
+        GrabFrost(Island.ActualWidth, Island.ActualHeight);
+    }
+
+    /// <summary>
+    /// The island is about to open (the cursor reached it, or it starts growing): take the backdrop for its
+    /// coming size now, before anything moves — the glass then stays see-through all the way, instead of
+    /// turning solid (grey) for the moment until the picture is retaken after the animation.
+    /// </summary>
+    private bool PrecaptureFrost(Size coming)
+    {
+        if (!_settings.Glass || Lite || _excluded != true || _hidden || _fullscreenHidden || !IsLoaded || !Island.IsVisible || _dragging || _posActive) return false;
+        double iw = Math.Max(coming.Width, Island.ActualWidth), ih = Math.Max(coming.Height, Island.ActualHeight);
+        if (_frostCovers && iw / 2 + FrostMargin <= _frostHalf + 0.5 && ih + FrostMargin <= _frostHeight + 0.5) return true;   // already big enough
+        return GrabFrost(iw, ih);
+    }
+
+    /// <summary>Grab and show the backdrop for an island of this size (centred where the island is).</summary>
+    private bool GrabFrost(double islandW, double islandH)
+    {
         try
         {
             // only the island and a thin margin, at a quarter of the resolution (it is blurred anyway),
             // into one reused bitmap - no new image (and no garbage) every time
-            double half = Island.ActualWidth / 2 + FrostMargin, height = Island.ActualHeight + FrostMargin;
+            double half = islandW / 2 + FrostMargin, height = islandH + FrostMargin;
             var top = Island.PointToScreen(new Point(Island.ActualWidth / 2, 0));
             double dpi = Dpi;
             double k = dpi * UiScale;
             var rect = new Drawing.Rectangle((int)(top.X - half * k), (int)top.Y, (int)(half * 2 * k), (int)(height * k));
-            int w = Math.Max(1, rect.Width / 4), h = Math.Max(1, rect.Height / 4);
-            var px = CaptureService.CaptureSmall(rect, w, h, _frostPixels);
-            if (px == null) return;
+            // liquid glass bends the picture at the edge: it needs a sharper grab than plain frost
+            int div = LiquidGlass ? 2 : 4;
+            int w = Math.Max(1, rect.Width / div), h = Math.Max(1, rect.Height / div);
+            var px = _frostTestBackdrop != null ? _frostTestBackdrop(w, h) : CaptureService.CaptureSmall(rect, w, h, _frostPixels);
+            if (px == null) return false;
             _frostPixels = px;
 
             long sig = w * 73856093L ^ h * 19349663L;
@@ -165,7 +190,7 @@ public partial class MainWindow
             if (!sizeChanged && sig == _frostSig && Math.Abs(half - _frostHalf) < 0.5 && Math.Abs(height - _frostHeight) < 0.5)
             {
                 if (FrostHost.Opacity > 0.5) SetFrostCovers(true);
-                return;   // nothing changed behind
+                return true;   // nothing changed behind
             }
             _frostSig = sig;
 
@@ -174,7 +199,14 @@ public partial class MainWindow
                 _frostBmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgr32, null);
                 Frost.Source = _frostBmp;
             }
-            _frostBmp!.WritePixels(new Int32Rect(0, 0, w, h), px, w * 4, 0);
+            ApplyLiquidBlur();
+            var shown = px;
+            if (LiquidGlass)
+            {
+                double sb = w / (half * 2);   // DIP → grab pixels
+                shown = Refract(px, w, h, (half - islandW / 2) * sb, islandW * sb, islandH * sb, Math.Min(islandH / 2, 28) * sb);
+            }
+            _frostBmp!.WritePixels(new Int32Rect(0, 0, w, h), shown, w * 4, 0);
             _frostHalf = half;
             _frostHeight = height;
             Frost.Width = half * 2;
@@ -183,8 +215,9 @@ public partial class MainWindow
             FrostHost.BeginAnimation(OpacityProperty, null);
             FrostHost.Opacity = 1;
             SetFrostCovers(true);
+            return true;
         }
-        catch { }
+        catch { return false; }
     }
 
     /// <summary>Called whenever the outline changes: keep frost and aura glued to the shape.</summary>

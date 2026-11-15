@@ -43,6 +43,7 @@ notes, a calendar, notifications and a little character that lives in the pill �
 
 ## What's new in 1.7
 
+- 🫧 **1.7.1 — Liquid glass**: clear frosted glass that bends what's behind it at the edges, with a thin colour fringe; no grey flash when the island opens.
 - 🌸☀️🍂❄️ **Season themes**: animated spring, summer, autumn and winter scenes inside the island.
 - 🧠 **Smart island**: opens on what matters now or on your usual tab, stays quiet while you type, saves battery.
 - 🎧 **Discord call** as its own little island beside the main one.
