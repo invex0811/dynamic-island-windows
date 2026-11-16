@@ -21,8 +21,11 @@ public partial class MainWindow
 
     private bool InboxPageOpen => _mode == Mode.Expanded && TabNotify.IsChecked == true;
 
+    private DateTime _notifiedAt = DateTime.MinValue;   // when the newest message came (the smart island opens on it)
+
     private void AddToInbox(NotificationMirror.Message m, ImageSource? logo)
     {
+        _notifiedAt = DateTime.Now;
         _inbox.Insert(0, new InboxItem(m.App, m.AppId, m.Title, m.Body, logo, DateTime.Now));
         if (_inbox.Count > InboxMax) _inbox.RemoveRange(InboxMax, _inbox.Count - InboxMax);
         InboxChanged();

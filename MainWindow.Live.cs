@@ -278,8 +278,9 @@ public partial class MainWindow
             Brush? badge = logo != null ? new ImageBrush(logo) { Stretch = Stretch.UniformToFill } : null;
             var msg = m;
             // the smart island holds messages while you type and shows them at the first pause
-            WhenNotTyping(() => ShowToast(badge != null ? "" : "", msg.Title, string.IsNullOrEmpty(msg.Body) ? msg.App : msg.Body,
-                () => OpenFromInbox(msg.App, msg.AppId), badge, ms: Math.Clamp(_settings.ToastSeconds, 2, 30) * 1000, sound: _settings.NotifySound));
+            // (held back while you typed: the 30 seconds of "a message has just come" count from when you see it)
+            WhenNotTyping(() => { _notifiedAt = DateTime.Now; ShowToast(badge != null ? "" : "", msg.Title, string.IsNullOrEmpty(msg.Body) ? msg.App : msg.Body,
+                () => OpenFromInbox(msg.App, msg.AppId), badge, ms: Math.Clamp(_settings.ToastSeconds, 2, 30) * 1000, sound: _settings.NotifySound); });
         }
     }
 

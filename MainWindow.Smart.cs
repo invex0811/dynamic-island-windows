@@ -24,9 +24,15 @@ public partial class MainWindow
     /// <summary>The user opens the folded island (hover or click): pick the tab, then open.</summary>
     private void OpenSmart()
     {
-        if (!BackToHome() && Smart && SmartTab() is { } tab && tab.IsChecked != true) tab.IsChecked = true;
+        // a message has just come and you reach for the island: it is the message you are after, so this goes
+        // before "the main tab after a break" and before everything else the island would pick
+        if (Smart && FreshMessage) { if (TabNotify.IsChecked != true) TabNotify.IsChecked = true; }
+        else if (!BackToHome() && Smart && SmartTab() is { } tab && tab.IsChecked != true) tab.IsChecked = true;
         Expand();
     }
+
+    /// <summary>A message came in the last 30 seconds and still waits on the Notifications tab.</summary>
+    private bool FreshMessage => _inbox.Count > 0 && (DateTime.Now - _notifiedAt).TotalSeconds < 30;
 
     /// <summary>
     /// Settings › Behavior, "open the main tab after a break": the island wasn't open for a while, so it starts
@@ -121,6 +127,28 @@ public partial class MainWindow
     /// <summary>Typing right now: input came in while the mouse stood still (the keyboard, not the mouse).</summary>
     private bool Typing => Smart && (DateTime.Now - _typedAt).TotalSeconds < 2.0;
 
+    private Native.POINT _typedCursor;   // where the cursor rested when typing was last noticed
+    private Native.POINT? _hoverHeld;    // where it rested when a hover was held back
+
+    /// <summary>
+    /// A hover that must not open the island: you type, and the cursor lies where it lay (the island came under
+    /// it, you didn't reach for it). Held until the mouse really moves — then it's you, and the island opens.
+    /// A cursor that came to the island from elsewhere is never held, whatever was pressed a moment before.
+    /// </summary>
+    private bool HoverHeldByTyping()
+    {
+        Native.GetCursorPos(out var c);
+        static bool Near(Native.POINT a, Native.POINT b) => Math.Abs(a.X - b.X) <= 2 && Math.Abs(a.Y - b.Y) <= 2;
+        if (_hoverHeld is { } held)
+        {
+            if (Near(c, held)) return true;
+            _hoverHeld = null;
+            return false;
+        }
+        if (Typing && Near(c, _typedCursor)) { _hoverHeld = c; return true; }
+        return false;
+    }
+
     /// <summary>Every 250 ms: notice typing; when it pauses, show what waited.</summary>
     private void WatchTyping()
     {
@@ -129,7 +157,7 @@ public partial class MainWindow
         if (GetLastInputInfo(ref li) && li.Time != _lastInputSeen)
         {
             bool mouseStill = c.X == _lastCursorSeen.X && c.Y == _lastCursorSeen.Y;
-            if (mouseStill && _lastInputSeen != 0) _typedAt = DateTime.Now;
+            if (mouseStill && _lastInputSeen != 0) { _typedAt = DateTime.Now; _typedCursor = c; }
             _lastInputSeen = li.Time;
         }
         _lastCursorSeen = c;

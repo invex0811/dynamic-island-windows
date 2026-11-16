@@ -20,8 +20,14 @@
       </Grid.RowDefinitions>
 
       <!-- toolbar (also the drag handle) -->
-      <Grid Background="Transparent" MouseLeftButtonDown="Toolbar_MouseLeftButtonDown" Margin="2,0,2,10">
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+      <!-- two groups in their own columns, never one over the other; the window is at least as wide as both -->
+      <Grid x:Name="Toolbar" Background="Transparent" MouseLeftButtonDown="Toolbar_MouseLeftButtonDown" Margin="2,0,2,10">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*" MinWidth="14"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel x:Name="LeftTools" Orientation="Horizontal" VerticalAlignment="Center">
           <Button Style="{StaticResource Swatch}" Background="#FF453A" Tag="#FF453A" Click="Color_Click" ToolTip="Красный"/>
           <Button Style="{StaticResource Swatch}" Background="#FFD60A" Tag="#FFD60A" Click="Color_Click" ToolTip="Жёлтый"/>
           <Button Style="{StaticResource Swatch}" Background="#30D158" Tag="#30D158" Click="Color_Click" ToolTip="Зелёный"/>
@@ -34,7 +40,7 @@
           <Button Style="{StaticResource IconButton}" Content="&#xE7A7;" Click="Undo_Click" ToolTip="Отменить (Ctrl+Z)"/>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+        <StackPanel x:Name="RightTools" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
           <Button Style="{StaticResource Pill}" Click="Ocr_Click" Margin="0,0,6,0">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xE8D2;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>

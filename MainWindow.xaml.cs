@@ -69,7 +69,13 @@ public partial class MainWindow : Window
         _gaze.Tick += (_, _) => UpdateGaze();
         _blink.Tick += (_, _) => Blink();
         // hover: not while typing (the cursor just happens to sit there), and on the tab that fits the moment
-        _expandDelay.Tick += (_, _) => { _expandDelay.Stop(); if (_mode == Mode.Compact && !_dragging && !Typing) OpenSmart(); };
+        _expandDelay.Tick += (_, _) =>
+        {
+            // typing with the cursor lying on the island: wait (the timer keeps asking) until the mouse moves
+            if (_mode == Mode.Compact && !_dragging && HoverHeldByTyping()) return;
+            _expandDelay.Stop();
+            if (_mode == Mode.Compact && !_dragging) OpenSmart();
+        };
         _collapseDelay.Tick += (_, _) => { _collapseDelay.Stop(); TryCollapse(); };
         _toastTimer.Tick += (_, _) => { _toastTimer.Stop(); if (_mode == Mode.Toast && !Island.IsMouseOver) SetMode(Mode.Compact); };
         _watch.Tick += (_, _) => WatchFullscreen();
@@ -189,6 +195,30 @@ public partial class MainWindow : Window
                             catch (Exception e) { Log.Write($"weathertest: fallback={fb} {city}: {e.Message}"); }
                             await Task.Delay(1100);   // OpenStreetMap: at most one request a second
                         }
+                    Application.Current.Shutdown();
+                    return;
+                }
+                if (action == "shottest")   // test: the screenshot window's toolbar over a small and a wide picture (made-up pictures)
+                {
+                    Settings.ReadOnly = true;
+                    var dir = args.ElementAtOrDefault(r + 2) ?? System.IO.Path.GetTempPath();
+                    foreach (var (w, h) in new[] { (320, 200), (1500, 600) })
+                    {
+                        var dv = new DrawingVisual();
+                        using (var dc = dv.RenderOpen())
+                            dc.DrawRectangle(new LinearGradientBrush(Color.FromRgb(0x2B, 0x5C, 0xE6), Color.FromRgb(0xFF, 0x5E, 0x8A), 30), null, new Rect(0, 0, w, h));
+                        var picture = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
+                        picture.Render(dv);
+                        var editor = new Views.ScreenshotEditor(picture);
+                        editor.Show();
+                        await Task.Delay(900);
+                        var content = (FrameworkElement)editor.Content;
+                        var shot = new RenderTargetBitmap((int)content.ActualWidth, (int)content.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                        shot.Render(content);
+                        CaptureService.SavePng(shot, System.IO.Path.Combine(dir, $"{Loc.Lang}-editor-{w}.png"));
+                        Log.Write($"shottest: {Loc.Lang}, picture {w} px: window {content.ActualWidth:0} px, room between the button groups {editor.ToolbarGap:0} px");
+                        editor.Close();
+                    }
                     Application.Current.Shutdown();
                     return;
                 }
@@ -1124,6 +1154,7 @@ public partial class MainWindow : Window
         {
             Squish(1.05); // swells a little under the cursor
             Kick(1.2);
+            _hoverHeld = null;
             if (_settings.ExpandOnHover) _expandDelay.Start();
         }
     }

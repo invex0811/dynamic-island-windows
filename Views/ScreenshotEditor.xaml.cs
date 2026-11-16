@@ -33,8 +33,9 @@ public partial class ScreenshotEditor : Window
         double dpi = VisualTreeHelper.GetDpi(Application.Current.MainWindow!).DpiScaleX;
         double w = image.PixelWidth / dpi, h = image.PixelHeight / dpi;
         double k = Math.Min(1, Math.Min(work.Width * 0.8 / w, (work.Height * 0.8 - 120) / h));
-        // the toolbar needs ~640 px; small crops are centred inside
-        CanvasHost.Width = Math.Max(640, w * k);
+        // the toolbar sets the least width — its buttons are wider in some languages; small crops are centred inside
+        Toolbar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        CanvasHost.Width = Math.Max(Math.Ceiling(Toolbar.DesiredSize.Width), w * k);
         CanvasHost.Height = Math.Max(160, h * k);
         Zoom.MaxWidth = w * Math.Max(k, 1);
         Zoom.MaxHeight = h * Math.Max(k, 1);
@@ -45,6 +46,9 @@ public partial class ScreenshotEditor : Window
         KeyDown += OnKeyDown;
         Loaded += (_, _) => Activate();
     }
+
+    /// <summary>Room between the two groups of toolbar buttons (negative: one lies over the other). For tests.</summary>
+    internal double ToolbarGap => RightTools.TranslatePoint(new Point(0, 0), LeftTools).X - LeftTools.ActualWidth;
 
     private double PixelsPerScreenUnit => _image.PixelWidth / Math.Max(1, CanvasHost.Width);
 
