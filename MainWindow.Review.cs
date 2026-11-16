@@ -141,7 +141,7 @@ public partial class MainWindow
                     _timer.SetDuration(TimeSpan.FromMinutes(25));
                     _timer.Start();
                     await Until(0.5);
-                    ShowToast("", "Загрузка завершена", "presentation.pdf", null, (Brush)FindResource("AccentBlue"), ms: (int)(D * 450));
+                    ShowToast("\uE896", "Загрузка завершена", "presentation.pdf", null, (Brush)FindResource("AccentBlue"), ms: (int)(D * 450));
                     await Until(0.97);
                     _timer.Reset();
                     break;

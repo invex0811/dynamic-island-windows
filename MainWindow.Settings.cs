@@ -48,7 +48,7 @@ public partial class MainWindow
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!, "--restart") { UseShellExecute = false });
             Close();
         }
-        catch (Exception ex) { ShowToast("", L.T("Не получилось"), ex.Message); }
+        catch (Exception ex) { ShowToast("\uE783", L.T("Не получилось"), ex.Message); }
     }
 
     /// <summary>Quick uninstall from the settings: the installer's uninstaller, or a clean self-removal for a portable copy.</summary>
@@ -230,6 +230,8 @@ public partial class MainWindow
         IslandOnlySwitch.IsChecked = _settings.IslandOnlyNotifications;
         ToastSecondsSlider.Value = Math.Clamp(_settings.ToastSeconds, 2, 30);
         ToastSecondsValue.Text = L.F("{0} с", Math.Clamp(_settings.ToastSeconds, 2, 30));
+        string sound = Array.IndexOf(NotifySounds.Ids, _settings.NotifySound) >= 0 ? _settings.NotifySound : "";
+        foreach (RadioButton seg in NotifySoundSegments.Children) seg.IsChecked = (string)seg.Tag == sound;
         IslandOnlySwitch.Visibility = IslandOnlyHint.Visibility = _settings.MirrorNotifications ? Visibility.Visible : Visibility.Collapsed;
         ColorBox.Text = _settings.IslandColor;
         HomeActionsChip.IsChecked = _settings.HomeActions;
@@ -423,6 +425,14 @@ public partial class MainWindow
         _settings.ToastSeconds = (int)Math.Round(ToastSecondsSlider.Value);
         ToastSecondsValue.Text = L.F("{0} с", _settings.ToastSeconds);
         _settings.Save();
+    }
+
+    /// <summary>A click on a sound plays it, also on the one already chosen (to hear it again).</summary>
+    private void NotifySound_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.NotifySound = (string)((FrameworkElement)sender).Tag;
+        _settings.Save();
+        NotifySounds.Play(_settings.NotifySound, force: true);
     }
 
     private void ScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

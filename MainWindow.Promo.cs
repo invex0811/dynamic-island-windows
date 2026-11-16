@@ -355,7 +355,7 @@ public partial class MainWindow
         _timer.SetDuration(TimeSpan.FromMinutes(25));
         _timer.Start();
         await W(1.9);
-        ShowToast("", lang == "en" ? "Download complete" : "Загрузка завершена", "presentation.pdf", null, (Brush)FindResource("AccentBlue"), ms: 1800);
+        ShowToast("\uE896", lang == "en" ? "Download complete" : "Загрузка завершена", "presentation.pdf", null, (Brush)FindResource("AccentBlue"), ms: 1800);
         await W(2.0);
         _timer.Reset();
 

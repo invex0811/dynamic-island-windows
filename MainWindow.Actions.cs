@@ -200,7 +200,7 @@ public partial class MainWindow
             return;
         }
         Clipboard.SetText(text);
-        ShowToast("", "Текст скопирован", text.Replace(Environment.NewLine, " "), () =>
+        ShowToast("", L.T("Текст скопирован"), text.Replace(Environment.NewLine, " "), () =>
         {
             var editor = new ScreenshotEditor(img);
             editor.Show();

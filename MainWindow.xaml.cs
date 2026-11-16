@@ -192,6 +192,11 @@ public partial class MainWindow : Window
                     Application.Current.Shutdown();
                     return;
                 }
+                if (action == "toasts")   // pictures of every notice in a list, and what did not fit (with --cover)
+                {
+                    await ShootToastsAsync(args[r + 2], args.ElementAtOrDefault(r + 3) ?? System.IO.Path.GetTempPath());
+                    return;
+                }
                 if (action == "keypill")   // pictures of the Caps Lock / layout pill, folded and open (with --cover)
                 {
                     var dir = args.ElementAtOrDefault(r + 2) ?? System.IO.Path.GetTempPath();
@@ -1032,8 +1037,17 @@ public partial class MainWindow : Window
 
     private double ToastWidth()
     {
+        // a new text marks only its own TextBlock as changed, and WPF skips a Measure that asks with the same room
+        // as last time when the view itself isn't marked: the notice then kept the width of the one before it
+        MarkForMeasure(ToastView);
         ToastView.Measure(new Size(double.PositiveInfinity, 58));
         return ToastView.DesiredSize.Width + 30;
+    }
+
+    private static void MarkForMeasure(DependencyObject d)
+    {
+        if (d is UIElement u) u.InvalidateMeasure();
+        for (int i = 0, n = VisualTreeHelper.GetChildrenCount(d); i < n; i++) MarkForMeasure(VisualTreeHelper.GetChild(d, i));
     }
 
     private void SetMode(Mode mode)
@@ -1669,11 +1683,16 @@ public partial class MainWindow : Window
     // ================================================================ toast
 
     private Action? _toastAction;
+    private static readonly FontFamily SymbolFont = new("Segoe UI Symbol, Segoe UI");
 
-    public void ShowToast(string glyph, string title, string? text, Action? onClick = null, Brush? badge = null, int ms = 2600)
+    public void ShowToast(string glyph, string title, string? text, Action? onClick = null, Brush? badge = null, int ms = 2600, string? sound = null)
     {
         if (_mode == Mode.Claude || _hidden) return;
+        NotifySounds.Play(sound);   // only with a toast that is really shown
         ToastIcon.Text = glyph;
+        // the icon font has only icons: any other sign (✳, ◎) would come out of it as an empty box
+        bool icon = glyph.Length == 0 || glyph[0] is >= '' and <= '';
+        ToastIcon.FontFamily = icon ? (FontFamily)FindResource("IconFont") : SymbolFont;
         ToastTitle.Text = title;
         ToastText.Text = text ?? "";
         ToastText.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;

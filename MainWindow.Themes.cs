@@ -190,7 +190,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowToast("", L.T("Не получилось открыть фото"), ex.Message);
+            ShowToast("\uE783", L.T("Не получилось открыть фото"), ex.Message);
         }
     }
 

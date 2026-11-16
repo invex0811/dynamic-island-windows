@@ -1179,6 +1179,18 @@
                       <Slider x:Name="ToastSecondsSlider" Style="{StaticResource SoftSlider}" Minimum="2" Maximum="30" TickFrequency="1"
                               IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="ToastSeconds_ValueChanged"/>
                     </DockPanel>
+                    <DockPanel Margin="0,0,0,8">
+                      <TextBlock Text="Звук уведомления" FontSize="12.5" VerticalAlignment="Center"/>
+                      <Border Background="{DynamicResource TileBg}" CornerRadius="13" Padding="2" HorizontalAlignment="Right">
+                        <StackPanel x:Name="NotifySoundSegments" Orientation="Horizontal">
+                          <RadioButton Style="{StaticResource Segment}" GroupName="NotifySound" Tag="" Content="Выкл" Click="NotifySound_Click"/>
+                          <RadioButton Style="{StaticResource Segment}" GroupName="NotifySound" Tag="1" Content="1" Click="NotifySound_Click"/>
+                          <RadioButton Style="{StaticResource Segment}" GroupName="NotifySound" Tag="2" Content="2" Click="NotifySound_Click"/>
+                          <RadioButton Style="{StaticResource Segment}" GroupName="NotifySound" Tag="3" Content="3" Click="NotifySound_Click"/>
+                          <RadioButton Style="{StaticResource Segment}" GroupName="NotifySound" Tag="4" Content="4" Click="NotifySound_Click"/>
+                        </StackPanel>
+                      </Border>
+                    </DockPanel>
                     <TextBlock x:Name="NotifyHint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,-4,0,8" Visibility="Collapsed"/>
                   </StackPanel>
                 </Border>

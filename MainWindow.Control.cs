@@ -171,9 +171,10 @@ public partial class MainWindow
     private async Task ToggleRadio(RadioKind kind)
     {
         var on = await ControlCenter.IsOnAsync(kind);
-        if (on == null) { ShowToast("", L.T("Нет адаптера"), null); return; }
+        string glyph = kind == RadioKind.Bluetooth ? "\uE702" : "\uE701";
+        if (on == null) { ShowToast(glyph, L.T("Нет адаптера"), null); return; }
         if (!await ControlCenter.SetAsync(kind, !on.Value))
-            ShowToast("", L.T("Windows не разрешил переключить"), L.T("Откройте «Параметры → Конфиденциальность → Радио»"));
+            ShowToast(glyph, L.T("Windows не разрешил переключить"), L.T("Откройте «Параметры → Конфиденциальность → Радио»"));
     }
 
     private async Task ToggleVpn()
@@ -199,7 +200,7 @@ public partial class MainWindow
         Paint("vpn", false, L.T("подключаю…"));
         if (!await ControlCenter.ConnectVpnAsync(profiles[0]))
         {
-            ShowToast("", L.T("VPN не подключился"), L.T("Откройте настройки VPN, чтобы ввести данные"));
+            ShowToast("\uE705", L.T("VPN не подключился"), L.T("Откройте настройки VPN, чтобы ввести данные"));
             ControlCenter.OpenVpnSettings();
         }
     }
@@ -218,7 +219,7 @@ public partial class MainWindow
         _settings.Save();
         CleanDesktop.Apply(on, _settings.TaskbarWasAutoHide, _settings.IconsWereVisible);
         CleanDesktopSwitch.IsChecked = on;
-        ShowToastIfCompact("", on ? L.T("Чистый рабочий стол включён") : L.T("Значки рабочего стола вернулись"));
+        ShowToastIfCompact("\uE7F4", on ? L.T("Чистый рабочий стол включён") : L.T("Значки рабочего стола вернулись"));
     }
 
     private void CleanDesktopSwitch_Click(object sender, RoutedEventArgs e) => SetCleanDesktop(CleanDesktopSwitch.IsChecked == true);

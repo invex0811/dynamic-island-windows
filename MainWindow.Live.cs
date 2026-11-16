@@ -279,7 +279,7 @@ public partial class MainWindow
             var msg = m;
             // the smart island holds messages while you type and shows them at the first pause
             WhenNotTyping(() => ShowToast(badge != null ? "" : "", msg.Title, string.IsNullOrEmpty(msg.Body) ? msg.App : msg.Body,
-                () => OpenFromInbox(msg.App, msg.AppId), badge, ms: Math.Clamp(_settings.ToastSeconds, 2, 30) * 1000));
+                () => OpenFromInbox(msg.App, msg.AppId), badge, ms: Math.Clamp(_settings.ToastSeconds, 2, 30) * 1000, sound: _settings.NotifySound));
         }
     }
 

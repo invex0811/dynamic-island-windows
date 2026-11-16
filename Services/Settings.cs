@@ -111,6 +111,8 @@ public sealed class Settings
     public bool MirrorAllApps { get; set; }
     /// <summary>How long a message stays on the island, in seconds (2…30).</summary>
     public int ToastSeconds { get; set; } = 5;
+    /// <summary>The sound a message arrives with: "1"…"4" (see NotifySounds), or "" for none.</summary>
+    public string NotifySound { get; set; } = "1";
     /// <summary>Messages show on the island only: Windows' own banners are switched off for the apps the island mirrors.</summary>
     public bool IslandOnlyNotifications { get; set; }
     /// <summary>Apps whose Windows banner we switched off, with what they had before (see WindowsBanners).</summary>

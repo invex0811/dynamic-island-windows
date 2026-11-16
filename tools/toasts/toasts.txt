@@ -1,0 +1,77 @@
+# every notice the island shows: kind, icon, badge, title, text (tabs) — see MainWindow.ToastSheet.cs
+toast	\uE783		Не получилось	=Отказано в доступе по пути «C:\Program Files\Atoll\settings.json».
+toast	\uE8D2		Текст не найден	Попробуйте выделить крупнее
+toast	\uE8D2		Текст скопирован	=Встречаемся в 19:00 у входа в парк, не забудь взять с собой документы и зарядку
+toast	\uED14		QR-код не найден	Выделите код целиком
+toast	\uED14		Ссылка из QR — нажмите, чтобы открыть	=https://example.com/catalog/items/2026/autumn?utm_source=qr&ref=poster
+toast	\uED14		QR-код скопирован	=WIFI:T:WPA;S:HomeNetwork;P:example;;
+toast		#3A7BD5	{0} скопирован¦=#3A7BD5	=rgb(58, 123, 213)
+toast	\uE75C		В буфере нет текста	
+toast	\uE75C		Текст очищен	Без форматирования, лишних пробелов и невидимых символов
+toast	\uE756		Команда запущена	=dotnet publish -c Release -r win-x64 --self-contained
+toast	\uE756		Не удалось запустить	=Не удается найти указанный файл.
+toast	\uE714		Запись сохранена	=Atoll 2026-11-16 19-05-12.mp4
+toast	\uE783		Запись не удалась	=The recording device is no longer available (0x88890004)
+toast	\uE714	Danger	Запись экрана началась	{0} · стоп: Ctrl+Alt+R или кнопка на «Главной»¦со звуком и микрофоном
+toast	\uE714	Danger	Запись экрана началась	{0} · стоп: Ctrl+Alt+R или кнопка на «Главной»¦без звука
+toast	\uE72E		Загрузка заблокирована	Чат пытался скачать «{0}» — программы из чата не скачиваются¦=setup.exe
+toast	✳	ClaudeOrange	Claude Code закончил	=dynamic-island · Сборка прошла успешно, все тесты зелёные, изменения готовы к проверке
+toast	◎	#10A37F	Codex закончил	=dynamic-island ·  ++ готово
+toast	✳	ClaudeOrange	=Claude Code	=dynamic-island · Claude needs your permission to use Bash
+toast	\uE8C8		Скопировано	
+toast	\uE8EF		=1250*12+340 = 15340	Скопировано
+toast	\uEA8F		Напомню  ++ =17.11 в 09:00	=Позвонить в сервис насчёт ноутбука
+toast	\uE701		Нет адаптера	
+toast	\uE702		Windows не разрешил переключить	Откройте «Параметры → Конфиденциальность → Радио»
+toast	\uE72E		Открываю {0}¦=AmneziaVPN	
+toast	\uE705		VPN не подключился	Откройте настройки VPN, чтобы ввести данные
+toast	\uE7F4		Чистый рабочий стол включён	
+toast	\uE7F4		Значки рабочего стола вернулись	
+toast	\uE7BA		Доступ не выдан	Windows попросит подтверждение — нажмите «Да»
+toast	\uE7FC		FPS включён	Выходить из Windows не нужно
+toast	\uE945		Включена облегчённая графика	Анимации шли рывками — эффекты выключены для плавности. Вернуть: Настройки → Поведение.
+toast	\uE916	Accent	Таймер закончился	{0} мин прошло¦=25
+toast	\uE916	Accent	Время отдохнуть	Длинный перерыв · 15 мин
+toast	\uE916	Accent	Время отдохнуть	Перерыв · 5 мин
+toast	\uE916	Accent	За работу	Помодоро {0}/4 · 25 мин¦=2
+toast	\uE896	AccentBlue	Загрузка завершена	=presentation.pdf
+toast	\uE896	AccentBlue	Загрузка завершена	=Отчёт за третий квартал 2026 (финальная версия, исправленная).pdf
+toast		logo	=Анна Петрова	=Привет! Ты сегодня придёшь на встречу в 19:00? Напиши, пожалуйста, как освободишься
+toast		logo	=Анна	=Ок 👍
+toast		logo	=Рабочий чат отдела маркетинга и продаж (124 участника)	=Игорь: отправил файл
+toast		logo	=Discord	=Discord
+toast	\uE8BD		=Telegram	=Новое сообщение
+toast	\uE787		Через {0} мин¦=10	=Созвон с командой по релизу 1.8
+toast	\uEA8F	Warm	Напоминание	=Забрать посылку
+toast	\uE787	Warm	Начинается	=Еженедельная планёрка отдела разработки и дизайна
+toast	\uEC54		Микрофон выключен	
+toast	\uE720		Микрофон включён	
+toast	\uE896	AccentBlue	Доступна версия {0}¦=1.8.0	Нажмите, чтобы обновить
+toast	\uE8ED		Повтор: этот трек	=Imagine Dragons — Believer
+toast	\uE8EE		Повтор выключен	
+toast	\uEB51		Убрано из избранного	=Imagine Dragons — Believer
+toast	\uEB52	#FF5C8A	Добавлено в избранное	=Florence + The Machine — Dog Days Are Over (2019 Remaster)
+toast	\uE8C8		Скопировано	=Пусть утро подождёт ещё немного
+toast	\uE8C8		Отчёт скопирован	
+toast	\uE783		Не получилось	=Не удалось найти часть пути.
+toast	\uE783		Автозапуск не изменён	=Отказано в доступе.
+toast	\uE74D		Привычки забыты	Остров начнёт учиться заново
+toast	\uE859		Мало заряда — облегчённая графика	Эффекты вернутся, когда подключите зарядку
+toast	\uE783		Не получилось открыть фото	=Файл повреждён или это не картинка.
+toast	\uE783		Буфер обмена занят	
+toast	\uE8C8		Скопировано	Вставьте Ctrl+V
+toast	\uE8C8		Заметка скопирована	
+toast	\uE73E	Accent	На полке	{0} файл(ов) ждут во вкладке «Буфер → Полка»¦=3
+toast	\uE73E	Accent	Файлы в буфере	Вставьте в Telegram, чат или папку: Ctrl+V
+toast	\uE73E	Accent	Архив готов	=Документы.zip
+toast	\uE73E	Accent	Готово	=IMG_20261116_190512.jpg
+toast	\uE73E	Accent	Фото сжато	=IMG_20261116_190512.jpg
+toast	\uE73E	Accent	Путь скопирован	
+toast	\uE73E		Сохранено	
+toast	\uE84A	#FF9F0A	Caps Lock включён	
+toast	\uE765		=EN	=English
+key	\uE84A	#FF9F0A	Caps Lock включён	
+key	\uE84A		Caps Lock выключен	
+key	\uE765		=EN	=English
+key	\uE765		=UK	=Українська
+key	\uE765		=PT	=Português (Brasil)
